@@ -1,5 +1,6 @@
 from mdp import *
 import numpy as np
+from IPython.display import display, clear_output
 import graphviz
 
 class graphe(gramPrintListener) :
@@ -130,12 +131,14 @@ class graphe(gramPrintListener) :
 
     def _visualizeGrapheState(self, current_state) : 
         """
-        Modification de visualizeGraphe mettant en évidence l'état où se trouve le parcours du graphe.
+        Modification de visualizeGraphe mettant en évidence l'état où se trouve le parcours du graphe et les transitions futures.
         """
         viz = graphviz.Digraph("Graphe", comment="vive Markov")
         for state in self.states:
             if state == current_state :
                 viz.node(state, color='red')
+            else : 
+                viz.node(state)
 
         for transNoAct in self.transnoact:
             origin_state = transNoAct[0]
@@ -144,17 +147,28 @@ class graphe(gramPrintListener) :
         for i, transAct in enumerate(self.transact):
             origin_state = transAct[0]
             tmp_action = transAct[1] + str(i)
-            viz.node(tmp_action, shape="point")
-            viz.edge(origin_state, tmp_action, label=tmp_action[:-1])
+            if origin_state == current_state : 
+                viz.node(tmp_action, shape="point", color ='blue')
+                viz.edge(origin_state, tmp_action, label=tmp_action[:-1], color = 'blue')
+            else :
+                viz.node(tmp_action, shape="point")
+                viz.edge(origin_state, tmp_action, label=tmp_action[:-1])
             for destination_state, destination_weight in zip(transAct[2], transAct[3]):
-                viz.edge(tmp_action, destination_state, label=str(destination_weight))
+                if origin_state == current_state : 
+                    viz.edge(tmp_action, destination_state, label=str(destination_weight), color = 'green')
+                else : 
+                    viz.edge(tmp_action, destination_state, label=str(destination_weight))
         return viz
 
     def parcours(self, N_pas = 50, regle = "", ret_chemin = False) -> list : 
-        if regle == "alea" : 
-            chemin = self._parcoursAlea(N_pas)
-        else :
-            chemin = self._parcoursUser(N_pas)
+        match regle : 
+            case "alea" : 
+                chemin = self._parcoursAlea(N_pas)
+            case "notebook" :
+                chemin = self._parcoursUser_notebook(N_pas)
+            case _ :
+                chemin = self._parcoursUser(N_pas)
+
         if ret_chemin : 
             return chemin
     
@@ -174,6 +188,32 @@ class graphe(gramPrintListener) :
             print(f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
             chemin.append(self.states[etat])
         return chemin
+
+    def _parcoursUser_notebook(self, N_pas = 50) -> list :
+        """
+        Parcours du graphe en demandant à l'utilisateur les actions, et en choisissant aléatoirement les états.
+        Le graphe est affiché à chaque étape. Cette fonction ne peut être appelée que dans un notebook
+        """
+        N_etat = len(self.states)
+        etat = 0
+        mat = self.grapheToMat()
+        chemin = [self.states[0]]
+        for i in range(N_pas) :
+            clear_output()
+            display(self._visualizeGrapheState(self.states[etat]))
+            print(f"L'état actuel est l'état {self.states[etat]}")
+            actions_possibles = [self.actions[i] for i in range(len(self.actions)) if np.any(mat[i][etat])]
+            print(f"Les actions possibles sont {actions_possibles}")
+            action = input("Choisissez une action : ")
+            while action not in actions_possibles :
+                print(f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
+                action = input("Choisissez une action : ")
+            proba = mat[self.dictActions[action]][etat]/10
+            etat = np.random.choice(np.arange(0, N_etat), p=proba)
+            print(f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
+            chemin.append(self.states[etat])
+        return chemin
+
 
     def _parcoursUser(self, N_pas = 50) -> list :
         """
