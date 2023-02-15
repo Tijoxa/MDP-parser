@@ -1,5 +1,6 @@
 from mdp import *
 import numpy as np
+import graphviz
 
 class graphe(gramPrintListener) :
 
@@ -95,3 +96,21 @@ class graphe(gramPrintListener) :
         erreur = []
         [erreur.append(x) for x in erreurs if x not in erreur]
         return "\n".join(erreur)
+    
+    def visualizeGraphe(self):
+        viz = graphviz.Digraph("Graphe", comment="vive Markov")
+        for state in self.states:
+            viz.node(state)
+
+        for transNoAct in self.transnoact:
+            origin_state = transNoAct[0]
+            for destination_state, destination_weight in zip(transNoAct[1], transNoAct[2]):
+                viz.edge(origin_state, destination_state, label=str(destination_weight))
+        for i, transAct in enumerate(self.transact):
+            origin_state = transAct[0]
+            tmp_action = transAct[1] + str(i)
+            viz.node(tmp_action, shape="point")
+            viz.edge(origin_state, tmp_action, label=tmp_action[:-1])
+            for destination_state, destination_weight in zip(transAct[2], transAct[3]):
+                viz.edge(tmp_action, destination_state, label=str(destination_weight))
+        return viz
