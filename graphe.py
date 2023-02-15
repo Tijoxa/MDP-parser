@@ -17,6 +17,9 @@ class graphe(gramPrintListener) :
         self.dictActions = {}
         for i, action in enumerate(self.actions):
             self.dictActions[action] = i
+        erreur = self.verifGraphe()
+        assert (erreur == ""), erreur
+        pass
 
     def __repr__(self) : 
         ret = ""
@@ -71,3 +74,24 @@ class graphe(gramPrintListener) :
 
     def grapheToMatInc(self) : 
         pass
+
+    def verifGraphe(self) -> str: 
+        """
+        Fonction appelée lors de l'initialisation. Vérifie que le graphe est correct : 
+            - Parmi les transitions, vérifie que les états et actions utilisés sont bien définis.
+        """
+        erreurs = []
+        check_states = [[trans[0]] + trans[2] for trans in self.transact] + [[trans[0]] + trans[1] for trans in self.transnoact]
+        check_actions = [trans[1] for trans in self.transact]
+        # Vérification de transact 
+        for state in sum(check_states,[]) : 
+            if not (state in self.states) : 
+                erreurs.append(f"{state} état non défini")
+        # Vérification de transnoact
+        for action in check_actions :
+            if not (action in self.actions) : 
+                erreurs.append(f"{action} action non définie")
+        # Suppression des doublons
+        erreur = []
+        [erreur.append(x) for x in erreurs if x not in erreur]
+        return "\n".join(erreur)
