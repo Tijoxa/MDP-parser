@@ -4,6 +4,7 @@ from IPython.display import display, clear_output
 import graphviz
 import moviepy.editor as mpy
 import os, shutil
+import pandas as pd 
 
 class graphe(gramPrintListener) :
 
@@ -203,10 +204,22 @@ class graphe(gramPrintListener) :
                     viz.edge(tmp_action, destination_state, label=str(destination_weight))
         return viz
 
-    def parcours(self, N_pas = 50, regle = "", ret_chemin = False, print_step = 0, make_gif = False) -> list : 
+    def parcours(self, N_pas = 50, regle = "", ret_chemin = False, print_txt = False, print_step = 0, make_gif = False) -> list : 
+        """
+        Parcours du graphe selon une règle choisie par l'utilisateur. 
+        regle : Choix de la méthode de parcours 
+            - "alea" : Choix aléatoire des actions et des états. 
+                    print_txt : Affiche du texte à chaque itération si True
+                    print_step : Pour une exécution en notebook, le graphe sera affiché tous les print_step
+            - "notebook" : L'utilisateur choisit les actions, les états sont aléatoires. Le graphe est affiché à chaque étape. 
+            - autre : Parcours du graphe en demandant à l'utilisateur les actions, et en choisissant aléatoirement les états.
+        N_pas : Nombre de pas à effectuer dans le graphe
+        make_gif : Si True, un fichier parcours.gif sera créé
+        ret_chemin : Si True, la fonction renvoie les noeuds parcourus.
+        """
         match regle : 
             case "alea" : 
-                chemin = self._parcoursAlea(N_pas, print_step, make_gif)
+                chemin = self._parcoursAlea(N_pas, print_txt, print_step, make_gif)
             case "notebook" :
                 chemin = self._parcoursUser_notebook(N_pas, make_gif)
             case _ :
@@ -215,10 +228,11 @@ class graphe(gramPrintListener) :
         if ret_chemin : 
             return chemin
     
-    def _parcoursAlea(self, N_pas = 50, print_step = 0, make_gif = False) -> list : 
+    def _parcoursAlea(self, N_pas = 50, print_txt = False, print_step = 0, make_gif = False) -> list : 
         """
         Parcours du graphe en choisissant aléatoirement les actions et les états. 
         N_pas : Nombre de pas à effectuer dans le graphe
+        print_txt : Affiche du texte à chaque itération si True
         print_step : Pour une exécution en notebook, le graphe sera affiché tous les print_step
         make_gif : Si True, un fichier parcours.gif sera créé
         """
@@ -226,7 +240,7 @@ class graphe(gramPrintListener) :
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
-        chemin = [self.states[0]]
+        chemin = [0]
         for i in range(N_pas) :
             g = self._visualizeGrapheState(self.states[etat])
             if print_step > 0 and i%print_step == 0 :
@@ -237,8 +251,8 @@ class graphe(gramPrintListener) :
             proba = mat[action][etat]/10
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
-            print(f"L'action {self.actions[action]} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
-            chemin.append(self.states[etat])
+            if print_txt : print(f"L'action {self.actions[action]} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
+            chemin.append(etat)
             if make_gif : 
                 g.format = 'png'
                 g.render(filename='gif/'+ str(i))
@@ -249,7 +263,7 @@ class graphe(gramPrintListener) :
                 os.remove("gif/" + str(i) + "2") 
 
         if make_gif : 
-            clip = mpy.ImageSequenceClip(sequence="gif/", fps=2)
+            clip = mpy.ImageSequenceClip(sequence="gif/", fps=1)
             clip.write_gif('parcours.gif')
             shutil.rmtree("gif/")
         return chemin
@@ -265,7 +279,7 @@ class graphe(gramPrintListener) :
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
-        chemin = [self.states[0]]
+        chemin = [0]
         for i in range(N_pas) :
             g = self._visualizeGrapheState(self.states[etat])
             display(g)
@@ -281,7 +295,7 @@ class graphe(gramPrintListener) :
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
             print(f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
-            chemin.append(self.states[etat])
+            chemin.append(etat)
             if make_gif : 
                 g.format = 'png'
                 g.render(filename='gif/'+ str(i))
@@ -291,7 +305,7 @@ class graphe(gramPrintListener) :
                 g.render(filename='gif/'+ str(i) + "2")
                 os.remove("gif/" + str(i) + "2") 
         if make_gif : 
-            clip = mpy.ImageSequenceClip(sequence="gif/", fps=2)
+            clip = mpy.ImageSequenceClip(sequence="gif/", fps=1)
             clip.write_gif('parcours.gif')
             shutil.rmtree("gif/")
         return chemin
@@ -307,7 +321,7 @@ class graphe(gramPrintListener) :
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
-        chemin = [self.states[0]]
+        chemin = [0]
         for i in range(N_pas) :
             g = self._visualizeGrapheState(self.states[etat])
             print(f"L'état actuel est l'état {self.states[etat]}")
@@ -322,7 +336,7 @@ class graphe(gramPrintListener) :
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
             print(f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
-            chemin.append(self.states[etat])
+            chemin.append(etat)
             if make_gif : 
                 g.format = 'png'
                 g.render(filename='gif/'+ str(i))
@@ -333,7 +347,39 @@ class graphe(gramPrintListener) :
                 os.remove("gif/" + str(i) + "2") 
             
         if make_gif : 
-            clip = mpy.ImageSequenceClip(sequence="gif/", fps=2)
+            clip = mpy.ImageSequenceClip(sequence="gif/", fps=1)
             clip.write_gif('parcours.gif')
             shutil.rmtree("gif/")
         return chemin
+
+    def statistiques(self, N_pas = 50, N_parcours = 50) : 
+        """
+        Étude statistique de graphe par parcours aléatoires
+        N_pas : Nombre de pas à effectuer dans le graphe
+        N_parcours : Nombre de parcours 
+        """
+
+        header1 = self.states + ["Total"]
+        header2 = ["->" + state for state in self.states] + ["Total"]
+        ll = len(header1) + 1
+        freq = [[0 for _ in range(ll)] for j in range(ll)]
+        freq = np.array(freq)
+
+
+        for k in range(N_parcours) : 
+            chemin = self.parcours(regle = "alea", N_pas = N_pas, ret_chemin=True)
+            old_state = 0
+            for state in chemin[1:] : 
+                freq[old_state+1][state+1] += 1
+                old_state = state 
+
+        freq = freq/(N_pas*N_parcours)
+        freq[-1] = np.sum(freq, axis = 0)
+        freq[:,-1] = np.sum(freq, axis = 1)
+
+        freq = pd.DataFrame(freq[1:,1:], columns=header2, index=header1) # Fréquece de visite d'un état à partir d'un autre état
+        freq.columns.name = 'Freq'
+
+        print(freq)
+
+
