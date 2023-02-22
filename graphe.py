@@ -3,12 +3,14 @@ import numpy as np
 from IPython.display import display, clear_output
 import graphviz
 import moviepy.editor as mpy
-import os, shutil
-import pandas as pd 
+import os
+import shutil
+import pandas as pd
 
-class graphe(gramPrintListener) :
 
-    def __init__(self, path) :
+class graphe(gramPrintListener):
+
+    def __init__(self, path):
         super().__init__()
         lexer = gramLexer(FileStream(path))
         stream = CommonTokenStream(lexer)
@@ -26,17 +28,21 @@ class graphe(gramPrintListener) :
         assert (erreur == ""), erreur
         pass
 
-    def __repr__(self) : 
+    def __repr__(self):
         ret = ""
         ret += "States: %s" % str([str(x) for x in self.states]) + "\n"
-        ret +="Actions: %s" % str([str(x) for x in self.actions]) + "\n"
-        for x in self.transact : 
-            ret +="Transition from " + x[0] + " with action "+ x[1] + " and targets " + str(x[2]) + " with weights " + str(x[3]) + "\n"
-        for x in self.transnoact : 
-            ret +="Transition from " + x[0] + " with no action and targets " + str(x[1]) + " with weights " + str(x[2]) + "\n"
+        ret += "Actions: %s" % str([str(x) for x in self.actions]) + "\n"
+        for x in self.transact:
+            ret += "Transition from " + x[0] + " with action " + x[1] + \
+                " and targets " + str(x[2]) + \
+                " with weights " + str(x[3]) + "\n"
+        for x in self.transnoact:
+            ret += "Transition from " + \
+                x[0] + " with no action and targets " + \
+                str(x[1]) + " with weights " + str(x[2]) + "\n"
         return ret
 
-    def _grapheTransNotActToMatAdj(self) -> np.ndarray: 
+    def _grapheTransNotActToMatAdj(self) -> np.ndarray:
         matAdjNoAct = np.zeros((len(self.states), len(self.states)))
         for transnoact in self.transnoact:
             for arrivee, poids in zip(transnoact[1], transnoact[2]):
@@ -44,9 +50,10 @@ class graphe(gramPrintListener) :
                 colonne = self.dictStates[arrivee]
                 matAdjNoAct[ligne, colonne] = poids
         return matAdjNoAct
-    
+
     def _grapheTransActToMatAdj(self) -> np.ndarray:
-        matAdjAct = np.zeros((len(self.actions), len(self.states), len(self.states)))
+        matAdjAct = np.zeros(
+            (len(self.actions), len(self.states), len(self.states)))
         for transact in self.transact:
             for arrivee, poids in zip(transact[2], transact[3]):
                 coor_x = self.dictActions[transact[1]]
@@ -54,7 +61,7 @@ class graphe(gramPrintListener) :
                 coor_z = self.dictStates[arrivee]
                 matAdjAct[coor_x, coor_y, coor_z] = poids
         return matAdjAct
-    
+
     def grapheToMat(self) -> np.ndarray:
         """
         Fonction appelée qui permet de définir la matrice du graphe.
@@ -76,7 +83,7 @@ class graphe(gramPrintListener) :
                     mat[i] += self._grapheTransNotActToMatAdj()
                 return mat
 
-    def _verifGraphe(self) -> str: 
+    def _verifGraphe(self) -> str:
         """
         Fonction appelée lors de l'initialisation. Vérifie que le graphe est correct : 
             - Vérifie que les états et actions utilisés dans les transitions sont bien définis.
@@ -84,36 +91,40 @@ class graphe(gramPrintListener) :
             - Vérifie que les poids se somment à un 
         """
         erreurs = []
-        check_states = [[trans[0]] + trans[2] for trans in self.transact] + [[trans[0]] + trans[1] for trans in self.transnoact]
+        check_states = [[trans[0]] + trans[2] for trans in self.transact] + \
+            [[trans[0]] + trans[1] for trans in self.transnoact]
         check_actions = [trans[1] for trans in self.transact]
-        # Vérification de transact 
-        for state in sum(check_states,[]) : 
-            if not (state in self.states) : 
+        # Vérification de transact
+        for state in sum(check_states, []):
+            if not (state in self.states):
                 erreurs.append(f"{state} état non défini")
         # Vérification de transnoact
-        for action in check_actions :
-            if not (action in self.actions) : 
+        for action in check_actions:
+            if not (action in self.actions):
                 erreurs.append(f"{action} action non définie")
-        # Vérification de l'unicité des transactions avec/sans action 
-        for transact in self.transact : 
-            for transnoact in self.transnoact : 
-                if transact[0] == transnoact[0] : 
-                    for state1 in transact[2] :
-                        for state2 in transnoact[1] : 
-                            if state1 == state2 :
-                                erreurs.append(f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
-        # Vérification des sommes des poids 
-        for transact in self.transact : 
-            if np.sum(transact[3]) != 10 :
-                erreurs.append(f"Les poids des transitions à partir de {transact[0]} avec l'action {transact[1]} ne se somment pas à 1")
-        for transnoact in self.transnoact : 
-            if np.sum(transnoact[2]) != 10 :
-                erreurs.append(f"Les poids des transitions sans action à partir de {transact[0]} ne se somment pas à 1")
+        # Vérification de l'unicité des transactions avec/sans action
+        for transact in self.transact:
+            for transnoact in self.transnoact:
+                if transact[0] == transnoact[0]:
+                    for state1 in transact[2]:
+                        for state2 in transnoact[1]:
+                            if state1 == state2:
+                                erreurs.append(
+                                    f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
+        # Vérification des sommes des poids
+        for transact in self.transact:
+            if np.sum(transact[3]) != 10:
+                erreurs.append(
+                    f"Les poids des transitions à partir de {transact[0]} avec l'action {transact[1]} ne se somment pas à 1")
+        for transnoact in self.transnoact:
+            if np.sum(transnoact[2]) != 10:
+                erreurs.append(
+                    f"Les poids des transitions sans action à partir de {transact[0]} ne se somment pas à 1")
         # Suppression des doublons
         erreur = []
         [erreur.append(x) for x in erreurs if x not in erreur]
         return "\n".join(erreur)
-    
+
     def visualizeGraphe(self):
         viz = graphviz.Digraph("Graphe", comment="vive Markov")
         for state in self.states:
@@ -122,52 +133,59 @@ class graphe(gramPrintListener) :
         for transNoAct in self.transnoact:
             origin_state = transNoAct[0]
             for destination_state, destination_weight in zip(transNoAct[1], transNoAct[2]):
-                viz.edge(origin_state, destination_state, label=str(destination_weight))
+                viz.edge(origin_state, destination_state,
+                         label=str(destination_weight))
         for i, transAct in enumerate(self.transact):
             origin_state = transAct[0]
             tmp_action = transAct[1] + str(i)
             viz.node(tmp_action, shape="point")
             viz.edge(origin_state, tmp_action, label=tmp_action[:-1])
             for destination_state, destination_weight in zip(transAct[2], transAct[3]):
-                viz.edge(tmp_action, destination_state, label=str(destination_weight))
+                viz.edge(tmp_action, destination_state,
+                         label=str(destination_weight))
         return viz
 
-    def _visualizeGrapheState(self, current_state) : 
+    def _visualizeGrapheState(self, current_state):
         """
         Modification de visualizeGraphe mettant en évidence l'état où se trouve le parcours du graphe et les transitions futures.
         current_state : noeud à mettre en évidence
         """
         viz = graphviz.Digraph("Graphe", comment="vive Markov")
         for state in self.states:
-            if state == current_state :
+            if state == current_state:
                 viz.node(state, color='red')
-            else : 
+            else:
                 viz.node(state)
 
         for transNoAct in self.transnoact:
             origin_state = transNoAct[0]
             for destination_state, destination_weight in zip(transNoAct[1], transNoAct[2]):
-                if origin_state == current_state : 
-                    viz.edge(origin_state, destination_state, label=str(destination_weight), color = 'green')
-                else : 
-                    viz.edge(origin_state, destination_state, label=str(destination_weight))
+                if origin_state == current_state:
+                    viz.edge(origin_state, destination_state,
+                             label=str(destination_weight), color='green')
+                else:
+                    viz.edge(origin_state, destination_state,
+                             label=str(destination_weight))
         for i, transAct in enumerate(self.transact):
             origin_state = transAct[0]
             tmp_action = transAct[1] + str(i)
-            if origin_state == current_state : 
-                viz.node(tmp_action, shape="point", color ='blue')
-                viz.edge(origin_state, tmp_action, label=tmp_action[:-1], color = 'blue')
-            else :
+            if origin_state == current_state:
+                viz.node(tmp_action, shape="point", color='blue')
+                viz.edge(origin_state, tmp_action,
+                         label=tmp_action[:-1], color='blue')
+            else:
                 viz.node(tmp_action, shape="point")
                 viz.edge(origin_state, tmp_action, label=tmp_action[:-1])
             for destination_state, destination_weight in zip(transAct[2], transAct[3]):
-                if origin_state == current_state : 
-                    viz.edge(tmp_action, destination_state, label=str(destination_weight), color = 'green')
-                else : 
-                    viz.edge(tmp_action, destination_state, label=str(destination_weight))
+                if origin_state == current_state:
+                    viz.edge(tmp_action, destination_state, label=str(
+                        destination_weight), color='green')
+                else:
+                    viz.edge(tmp_action, destination_state,
+                             label=str(destination_weight))
         return viz
 
-    def _visualizeGrapheTransition(self, current_state, new_state, action) : 
+    def _visualizeGrapheTransition(self, current_state, new_state, action):
         """
         Modification de visualizeGraphe mettant en évidence l'état où se trouve le parcours du graphe et les transitions futures.
         current_state : noeud qui va être quitté
@@ -176,35 +194,40 @@ class graphe(gramPrintListener) :
         """
         viz = graphviz.Digraph("Graphe", comment="vive Markov")
         for state in self.states:
-            if state == current_state :
+            if state == current_state:
                 viz.node(state, color='red')
-            else : 
+            else:
                 viz.node(state)
 
         for transNoAct in self.transnoact:
             origin_state = transNoAct[0]
             for destination_state, destination_weight in zip(transNoAct[1], transNoAct[2]):
-                if origin_state == current_state and destination_state == new_state : 
-                    viz.edge(origin_state, destination_state, label=str(destination_weight), color = 'yellow')
-                else : 
-                    viz.edge(origin_state, destination_state, label=str(destination_weight))
+                if origin_state == current_state and destination_state == new_state:
+                    viz.edge(origin_state, destination_state, label=str(
+                        destination_weight), color='yellow')
+                else:
+                    viz.edge(origin_state, destination_state,
+                             label=str(destination_weight))
         for i, transAct in enumerate(self.transact):
             origin_state = transAct[0]
             tmp_action = transAct[1] + str(i)
-            if origin_state == current_state and tmp_action[:-1] == action: 
-                viz.node(tmp_action, shape="point", color ='orange')
-                viz.edge(origin_state, tmp_action, label=tmp_action[:-1], color = 'orange')
-            else :
+            if origin_state == current_state and tmp_action[:-1] == action:
+                viz.node(tmp_action, shape="point", color='orange')
+                viz.edge(origin_state, tmp_action,
+                         label=tmp_action[:-1], color='orange')
+            else:
                 viz.node(tmp_action, shape="point")
                 viz.edge(origin_state, tmp_action, label=tmp_action[:-1])
             for destination_state, destination_weight in zip(transAct[2], transAct[3]):
-                if origin_state == current_state and destination_state == new_state and tmp_action[:-1] == action : 
-                    viz.edge(tmp_action, destination_state, label=str(destination_weight), color = 'yellow')
-                else : 
-                    viz.edge(tmp_action, destination_state, label=str(destination_weight))
+                if origin_state == current_state and destination_state == new_state and tmp_action[:-1] == action:
+                    viz.edge(tmp_action, destination_state, label=str(
+                        destination_weight), color='yellow')
+                else:
+                    viz.edge(tmp_action, destination_state,
+                             label=str(destination_weight))
         return viz
 
-    def parcours(self, N_pas = 50, regle = "", ret_chemin = False, print_txt = False, print_step = 0, make_gif = False) -> list : 
+    def parcours(self, N_pas=50, regle="", ret_chemin=False, print_txt=False, print_step=0, make_gif=False) -> list:
         """
         Parcours du graphe selon une règle choisie par l'utilisateur. 
         regle : Choix de la méthode de parcours 
@@ -217,18 +240,19 @@ class graphe(gramPrintListener) :
         make_gif : Si True, un fichier parcours.gif sera créé
         ret_chemin : Si True, la fonction renvoie les noeuds parcourus.
         """
-        match regle : 
-            case "alea" : 
-                chemin = self._parcoursAlea(N_pas, print_txt, print_step, make_gif)
-            case "notebook" :
+        match regle:
+            case "alea":
+                chemin = self._parcoursAlea(
+                    N_pas, print_txt, print_step, make_gif)
+            case "notebook":
                 chemin = self._parcoursUser_notebook(N_pas, make_gif)
-            case _ :
+            case _:
                 chemin = self._parcoursUser(N_pas, make_gif)
 
-        if ret_chemin : 
+        if ret_chemin:
             return chemin
-    
-    def _parcoursAlea(self, N_pas = 50, print_txt = False, print_step = 0, make_gif = False) -> list : 
+
+    def _parcoursAlea(self, N_pas=50, print_txt=False, print_step=0, make_gif=False) -> list:
         """
         Parcours du graphe en choisissant aléatoirement les actions et les états. 
         N_pas : Nombre de pas à effectuer dans le graphe
@@ -236,123 +260,138 @@ class graphe(gramPrintListener) :
         print_step : Pour une exécution en notebook, le graphe sera affiché tous les print_step
         make_gif : Si True, un fichier parcours.gif sera créé
         """
-        if make_gif : os.mkdir("gif")
+        if make_gif:
+            os.mkdir("gif")
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
         chemin = [0]
-        for i in range(N_pas) :
+        for i in range(N_pas):
             g = self._visualizeGrapheState(self.states[etat])
-            if print_step > 0 and i%print_step == 0 :
+            if print_step > 0 and i % print_step == 0:
                 clear_output()
                 display(g)
-            actions_possibles = [i for i in range(len(self.actions)) if np.any(mat[i][etat])] # Les actions 
-            action = actions_possibles[np.random.randint(len(actions_possibles))]
+            actions_possibles = [i for i in range(
+                len(self.actions)) if np.any(mat[i][etat])]  # Les actions
+            action = actions_possibles[np.random.randint(
+                len(actions_possibles))]
             proba = mat[action][etat]/10
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
-            if print_txt : print(f"L'action {self.actions[action]} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
+            if print_txt:
+                print(
+                    f"L'action {self.actions[action]} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
             chemin.append(etat)
-            if make_gif : 
+            if make_gif:
                 g.format = 'png'
-                g.render(filename='gif/'+ str(i))
-                os.remove("gif/" + str(i)) 
-                g = self._visualizeGrapheTransition(self.states[ancien_etat], self.states[etat], self.actions[action])
+                g.render(filename='gif/' + str(i))
+                os.remove("gif/" + str(i))
+                g = self._visualizeGrapheTransition(
+                    self.states[ancien_etat], self.states[etat], self.actions[action])
                 g.format = 'png'
-                g.render(filename='gif/'+ str(i) + "2")
-                os.remove("gif/" + str(i) + "2") 
+                g.render(filename='gif/' + str(i) + "2")
+                os.remove("gif/" + str(i) + "2")
 
-        if make_gif : 
+        if make_gif:
             clip = mpy.ImageSequenceClip(sequence="gif/", fps=1)
             clip.write_gif('parcours.gif')
             shutil.rmtree("gif/")
         return chemin
 
-    def _parcoursUser_notebook(self, N_pas = 50, make_gif = False) -> list :
+    def _parcoursUser_notebook(self, N_pas=50, make_gif=False) -> list:
         """
         Parcours du graphe en demandant à l'utilisateur les actions, et en choisissant aléatoirement les états.
         Le graphe est affiché à chaque étape. Cette fonction ne peut être appelée que dans un notebook
         N_pas : Nombre de pas à effectuer dans le graphe
         make_gif : Si True, un fichier parcours.gif sera créé
         """
-        if make_gif : os.mkdir("gif")
+        if make_gif:
+            os.mkdir("gif")
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
         chemin = [0]
-        for i in range(N_pas) :
+        for i in range(N_pas):
             g = self._visualizeGrapheState(self.states[etat])
             display(g)
             print(f"L'état actuel est l'état {self.states[etat]}")
-            actions_possibles = [self.actions[i] for i in range(len(self.actions)) if np.any(mat[i][etat])]
+            actions_possibles = [self.actions[i] for i in range(
+                len(self.actions)) if np.any(mat[i][etat])]
             print(f"Les actions possibles sont {actions_possibles}")
             action = input("Choisissez une action : ")
-            while action not in actions_possibles :
-                print(f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
+            while action not in actions_possibles:
+                print(
+                    f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
                 action = input("Choisissez une action : ")
             clear_output()
             proba = mat[self.dictActions[action]][etat]/10
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
-            print(f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
+            print(
+                f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
             chemin.append(etat)
-            if make_gif : 
+            if make_gif:
                 g.format = 'png'
-                g.render(filename='gif/'+ str(i))
-                os.remove("gif/" + str(i)) 
-                g = self._visualizeGrapheTransition(self.states[ancien_etat], self.states[etat], action)
+                g.render(filename='gif/' + str(i))
+                os.remove("gif/" + str(i))
+                g = self._visualizeGrapheTransition(
+                    self.states[ancien_etat], self.states[etat], action)
                 g.format = 'png'
-                g.render(filename='gif/'+ str(i) + "2")
-                os.remove("gif/" + str(i) + "2") 
-        if make_gif : 
+                g.render(filename='gif/' + str(i) + "2")
+                os.remove("gif/" + str(i) + "2")
+        if make_gif:
             clip = mpy.ImageSequenceClip(sequence="gif/", fps=1)
             clip.write_gif('parcours.gif')
             shutil.rmtree("gif/")
         return chemin
 
-
-    def _parcoursUser(self, N_pas = 50, make_gif = False) -> list :
+    def _parcoursUser(self, N_pas=50, make_gif=False) -> list:
         """
         Parcours du graphe en demandant à l'utilisateur les actions, et en choisissant aléatoirement les états.
         N_pas : Nombre de pas à effectuer dans le graphe
         make_gif : Si True, un fichier parcours.gif sera créé
         """
-        if make_gif : os.mkdir("gif")
+        if make_gif:
+            os.mkdir("gif")
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
         chemin = [0]
-        for i in range(N_pas) :
+        for i in range(N_pas):
             g = self._visualizeGrapheState(self.states[etat])
             print(f"L'état actuel est l'état {self.states[etat]}")
             print(f"L'état actuel est l'état {self.states[etat]}")
-            actions_possibles = [self.actions[i] for i in range(len(self.actions)) if np.any(mat[i][etat])]
+            actions_possibles = [self.actions[i] for i in range(
+                len(self.actions)) if np.any(mat[i][etat])]
             print(f"Les actions possibles sont {actions_possibles}")
             action = input("Choisissez une action : ")
-            while action not in actions_possibles :
-                print(f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
+            while action not in actions_possibles:
+                print(
+                    f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
                 action = input("Choisissez une action : ")
             proba = mat[self.dictActions[action]][etat]/10
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
-            print(f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
+            print(
+                f"L'action {action} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
             chemin.append(etat)
-            if make_gif : 
+            if make_gif:
                 g.format = 'png'
-                g.render(filename='gif/'+ str(i))
-                os.remove("gif/" + str(i)) 
-                g = self._visualizeGrapheTransition(self.states[ancien_etat], self.states[etat], action)
+                g.render(filename='gif/' + str(i))
+                os.remove("gif/" + str(i))
+                g = self._visualizeGrapheTransition(
+                    self.states[ancien_etat], self.states[etat], action)
                 g.format = 'png'
-                g.render(filename='gif/'+ str(i) + "2")
-                os.remove("gif/" + str(i) + "2") 
-            
-        if make_gif : 
+                g.render(filename='gif/' + str(i) + "2")
+                os.remove("gif/" + str(i) + "2")
+
+        if make_gif:
             clip = mpy.ImageSequenceClip(sequence="gif/", fps=1)
             clip.write_gif('parcours.gif')
             shutil.rmtree("gif/")
         return chemin
 
-    def statistiques(self, N_pas = 50, N_parcours = 50) : 
+    def statistiques(self, N_pas=50, N_parcours=50):
         """
         Étude statistique de graphe par parcours aléatoires
         N_pas : Nombre de pas à effectuer dans le graphe
@@ -365,21 +404,19 @@ class graphe(gramPrintListener) :
         freq = [[0 for _ in range(ll)] for j in range(ll)]
         freq = np.array(freq)
 
-
-        for k in range(N_parcours) : 
-            chemin = self.parcours(regle = "alea", N_pas = N_pas, ret_chemin=True)
+        for k in range(N_parcours):
+            chemin = self.parcours(regle="alea", N_pas=N_pas, ret_chemin=True)
             old_state = 0
-            for state in chemin[1:] : 
+            for state in chemin[1:]:
                 freq[old_state+1][state+1] += 1
-                old_state = state 
+                old_state = state
 
         freq = freq/(N_pas*N_parcours)
-        freq[-1] = np.sum(freq, axis = 0)
-        freq[:,-1] = np.sum(freq, axis = 1)
+        freq[-1] = np.sum(freq, axis=0)
+        freq[:, -1] = np.sum(freq, axis=1)
 
-        freq = pd.DataFrame(freq[1:,1:], columns=header2, index=header1) # Fréquece de visite d'un état à partir d'un autre état
+        # Fréquece de visite d'un état à partir d'un autre état
+        freq = pd.DataFrame(freq[1:, 1:], columns=header2, index=header1)
         freq.columns.name = 'Freq'
 
         print(freq)
-
-
