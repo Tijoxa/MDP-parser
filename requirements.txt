@@ -1,0 +1,6 @@
+# conda install python-graphviz
+
+antlr4-python3-runtime==4.11.1
+moviepy
+pandas
+numpy
