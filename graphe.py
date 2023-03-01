@@ -26,7 +26,6 @@ class graphe(gramPrintListener):
             self.dictActions[action] = i
         erreur = self._verifGraphe()
         assert (erreur == ""), erreur
-        pass
 
     def __repr__(self):
         ret = ""
@@ -76,7 +75,7 @@ class graphe(gramPrintListener):
             case (_, []):
                 return self._grapheTransActToMatAdj()
             case ([], _):
-                return np.tile(self._grapheTransNotActToMatAdj(), (len(self.actions),1,1))
+                return np.tile(self._grapheTransNotActToMatAdj(), (len(self.actions), 1, 1))
             case _:
                 mat = self._grapheTransActToMatAdj()
                 for i in range(mat.shape[0]):
@@ -111,15 +110,6 @@ class graphe(gramPrintListener):
                             if state1 == state2:
                                 erreurs.append(
                                    f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
-        # # Vérification des sommes des poids
-        # for transact in self.transact:
-        #     if np.sum(transact[3]) != 10:
-        #         erreurs.append(
-        #             f"Les poids des transitions à partir de {transact[0]} avec l'action {transact[1]} ne se somment pas à 1")
-        # for transnoact in self.transnoact:
-        #     if np.sum(transnoact[2]) != 10:
-        #         erreurs.append(
-        #             f"Les poids des transitions sans action à partir de {transact[0]} ne se somment pas à 1")
         # Suppression des doublons
         erreur = []
         [erreur.append(x) for x in erreurs if x not in erreur]
@@ -262,6 +252,8 @@ class graphe(gramPrintListener):
         """
         if make_gif:
             os.mkdir("gif")
+        else:
+            shutil.rmtree("gif")
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
@@ -287,7 +279,7 @@ class graphe(gramPrintListener):
             else:
                 action = actions_possibles[np.random.randint(
                     len(actions_possibles))]
-                proba = mat[action][etat]/10
+                proba = mat[action][etat] / np.sum(mat[action][etat])
                 ancien_etat = etat
                 etat = np.random.choice(np.arange(0, N_etat), p=proba)
             if print_txt:
@@ -319,6 +311,8 @@ class graphe(gramPrintListener):
         """
         if make_gif:
             os.mkdir("gif")
+        else:
+            shutil.rmtree("gif")
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
@@ -336,7 +330,7 @@ class graphe(gramPrintListener):
                     f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
                 action = input("Choisissez une action : ")
             clear_output()
-            proba = mat[self.dictActions[action]][etat]/10
+            proba = mat[self.dictActions[action]][etat] / np.sum(mat[action][etat])
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
             print(
@@ -365,6 +359,8 @@ class graphe(gramPrintListener):
         """
         if make_gif:
             os.mkdir("gif")
+        else:
+            shutil.rmtree("gif")
         N_etat = len(self.states)
         etat = 0
         mat = self.grapheToMat()
@@ -381,7 +377,7 @@ class graphe(gramPrintListener):
                 print(
                     f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
                 action = input("Choisissez une action : ")
-            proba = mat[self.dictActions[action]][etat]/10
+            proba = mat[self.dictActions[action]][etat] / np.sum(mat[action][etat])
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
             print(
@@ -416,14 +412,14 @@ class graphe(gramPrintListener):
         freq = [[0 for _ in range(ll)] for j in range(ll)]
         freq = np.array(freq)
 
-        for k in range(N_parcours):
+        for _ in range(N_parcours):
             chemin = self.parcours(regle="alea", N_pas=N_pas, ret_chemin=True)
             old_state = 0
             for state in chemin[1:]:
-                freq[old_state+1][state+1] += 1
+                freq[old_state + 1][state + 1] += 1
                 old_state = state
 
-        freq = freq/(N_pas*N_parcours)
+        freq = freq / (N_pas * N_parcours)
         freq[-1] = np.sum(freq, axis=0)
         freq[:, -1] = np.sum(freq, axis=1)
 
