@@ -8,6 +8,7 @@ import shutil
 import pandas as pd
 # TODO: implémenter calcul probas pour mdp et mc (avec s0, s1 et s?), utiliser scipy.linprog pour mdp
 # TODO: implémenter calcul récompenses pour mdp et mc
+# TODO: créer des boucles aux dead ends
 
 
 class graphe(gramPrintListener):
