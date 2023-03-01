@@ -7,6 +7,9 @@ import os
 import shutil
 import pandas as pd
 
+#TODO: implémenter calcul probas pour mdp et mc (avec s0, s1 et s?), utiliser scipy.linprog pour mdp
+#TODO: implémenter calcul récompenses pour mdp et mc
+
 
 class graphe(gramPrintListener):
 
@@ -264,7 +267,7 @@ class graphe(gramPrintListener):
                 clear_output()
                 display(g)
             actions_possibles = [i for i in range(
-                len(self.actions)) if np.any(mat[i][etat])]  # Les actions
+                len(self.actions)) if np.any(mat[i, etat])]  # Les actions
             if len(actions_possibles) == 0:
                 if make_gif:
                     g.format = 'png'
@@ -279,7 +282,7 @@ class graphe(gramPrintListener):
             else:
                 action = actions_possibles[np.random.randint(
                     len(actions_possibles))]
-                proba = mat[action][etat] / np.sum(mat[action][etat])
+                proba = mat[action, etat] / np.sum(mat[action, etat])
                 ancien_etat = etat
                 etat = np.random.choice(np.arange(0, N_etat), p=proba)
             if print_txt:
@@ -322,7 +325,7 @@ class graphe(gramPrintListener):
             display(g)
             print(f"L'état actuel est l'état {self.states[etat]}")
             actions_possibles = [self.actions[i] for i in range(
-                len(self.actions)) if np.any(mat[i][etat])]
+                len(self.actions)) if np.any(mat[i, etat])]
             print(f"Les actions possibles sont {actions_possibles}")
             action = input("Choisissez une action : ")
             while action not in actions_possibles:
@@ -330,7 +333,7 @@ class graphe(gramPrintListener):
                     f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
                 action = input("Choisissez une action : ")
             clear_output()
-            proba = mat[self.dictActions[action]][etat] / np.sum(mat[action][etat])
+            proba = mat[self.dictActions[action], etat] / np.sum(mat[action, etat])
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
             print(
@@ -370,14 +373,14 @@ class graphe(gramPrintListener):
             print(f"L'état actuel est l'état {self.states[etat]}")
             print(f"L'état actuel est l'état {self.states[etat]}")
             actions_possibles = [self.actions[i] for i in range(
-                len(self.actions)) if np.any(mat[i][etat])]
+                len(self.actions)) if np.any(mat[i, etat])]
             print(f"Les actions possibles sont {actions_possibles}")
             action = input("Choisissez une action : ")
             while action not in actions_possibles:
                 print(
                     f"Action incorrecte. {action} n'est pas dans {actions_possibles}")
                 action = input("Choisissez une action : ")
-            proba = mat[self.dictActions[action]][etat] / np.sum(mat[action][etat])
+            proba = mat[self.dictActions[action], etat] / np.sum(mat[action, etat])
             ancien_etat = etat
             etat = np.random.choice(np.arange(0, N_etat), p=proba)
             print(
@@ -409,14 +412,14 @@ class graphe(gramPrintListener):
         header1 = self.states + ["Total"]
         header2 = ["->" + state for state in self.states] + ["Total"]
         ll = len(header1) + 1
-        freq = [[0 for _ in range(ll)] for j in range(ll)]
+        freq = [[0 for _ in range(ll)] for _ in range(ll)]
         freq = np.array(freq)
 
         for _ in range(N_parcours):
             chemin = self.parcours(regle="alea", N_pas=N_pas, ret_chemin=True)
             old_state = 0
             for state in chemin[1:]:
-                freq[old_state + 1][state + 1] += 1
+                freq[old_state + 1, state + 1] += 1
                 old_state = state
 
         freq = freq / (N_pas * N_parcours)
