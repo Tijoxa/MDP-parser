@@ -273,11 +273,23 @@ class graphe(gramPrintListener):
                 display(g)
             actions_possibles = [i for i in range(
                 len(self.actions)) if np.any(mat[i][etat])]  # Les actions
-            action = actions_possibles[np.random.randint(
-                len(actions_possibles))]
-            proba = mat[action][etat]/10
-            ancien_etat = etat
-            etat = np.random.choice(np.arange(0, N_etat), p=proba)
+            if len(actions_possibles) == 0:
+                if make_gif:
+                    g.format = 'png'
+                    g.render(filename='gif/' + str(i))
+                    os.remove("gif/" + str(i))
+                    g = self._visualizeGrapheTransition(
+                        self.states[ancien_etat], self.states[ancien_etat], self.actions[0])
+                    g.format = 'png'
+                    g.render(filename='gif/' + str(i) + "2")
+                    os.remove("gif/" + str(i) + "2")
+                break
+            else:
+                action = actions_possibles[np.random.randint(
+                    len(actions_possibles))]
+                proba = mat[action][etat]/10
+                ancien_etat = etat
+                etat = np.random.choice(np.arange(0, N_etat), p=proba)
             if print_txt:
                 print(
                     f"L'action {self.actions[action]} est choisie, l'état {self.states[etat]} est atteint avec une probabilité p = {proba[etat]}")
