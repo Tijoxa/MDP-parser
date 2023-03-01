@@ -76,7 +76,7 @@ class graphe(gramPrintListener):
             case (_, []):
                 return self._grapheTransActToMatAdj()
             case ([], _):
-                return np.expand_dims(self._grapheTransNotActToMatAdj(), 1)
+                return np.tile(self._grapheTransNotActToMatAdj(), (len(self.actions),1,1))
             case _:
                 mat = self._grapheTransActToMatAdj()
                 for i in range(mat.shape[0]):
@@ -110,16 +110,16 @@ class graphe(gramPrintListener):
                         for state2 in transnoact[1]:
                             if state1 == state2:
                                 erreurs.append(
-                                    f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
-        # Vérification des sommes des poids
-        for transact in self.transact:
-            if np.sum(transact[3]) != 10:
-                erreurs.append(
-                    f"Les poids des transitions à partir de {transact[0]} avec l'action {transact[1]} ne se somment pas à 1")
-        for transnoact in self.transnoact:
-            if np.sum(transnoact[2]) != 10:
-                erreurs.append(
-                    f"Les poids des transitions sans action à partir de {transact[0]} ne se somment pas à 1")
+                                   f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
+        # # Vérification des sommes des poids
+        # for transact in self.transact:
+        #     if np.sum(transact[3]) != 10:
+        #         erreurs.append(
+        #             f"Les poids des transitions à partir de {transact[0]} avec l'action {transact[1]} ne se somment pas à 1")
+        # for transnoact in self.transnoact:
+        #     if np.sum(transnoact[2]) != 10:
+        #         erreurs.append(
+        #             f"Les poids des transitions sans action à partir de {transact[0]} ne se somment pas à 1")
         # Suppression des doublons
         erreur = []
         [erreur.append(x) for x in erreurs if x not in erreur]
