@@ -6,7 +6,7 @@ import moviepy.editor as mpy
 import os
 import shutil
 import pandas as pd
-
+import warnings
 #TODO: implémenter calcul probas pour mdp et mc (avec s0, s1 et s?), utiliser scipy.linprog pour mdp
 #TODO: implémenter calcul récompenses pour mdp et mc
 
@@ -27,8 +27,8 @@ class graphe(gramPrintListener):
         self.dictActions = {}
         for i, action in enumerate(self.actions):
             self.dictActions[action] = i
-        erreur = self._verifGraphe()
-        assert (erreur == ""), erreur
+        print(self._verifGraphe())
+        pass
 
     def __repr__(self):
         ret = ""
@@ -85,12 +85,11 @@ class graphe(gramPrintListener):
                     mat[i] += self._grapheTransNotActToMatAdj()
                 return mat
 
-    def _verifGraphe(self) -> str:
+    def _verifGraphe(self):
         """
         Fonction appelée lors de l'initialisation. Vérifie que le graphe est correct : 
             - Vérifie que les états et actions utilisés dans les transitions sont bien définis.
             - Vérifie que s'il existe une transition avec action de x vers y, alors il n'existe pas de transition sans action de x vers y.
-            - Vérifie que les poids se somment à un 
         """
         erreurs = []
         check_states = [[trans[0]] + trans[2] for trans in self.transact] + \
@@ -100,10 +99,14 @@ class graphe(gramPrintListener):
         for state in sum(check_states, []):
             if not (state in self.states):
                 erreurs.append(f"{state} état non défini")
+                self.states.append(state)
+                self.dictStates[state] = self.dictStates[self.states[-2]] + 1 
         # Vérification de transnoact
         for action in check_actions:
             if not (action in self.actions):
-                erreurs.append(f"{action} action non définie")
+                erreurs.append(f"{action} action non défini")
+                self.actions.append(action)
+                self.dictActions[action] = self.dictActions[self.actions[-2]] + 1 
         # Vérification de l'unicité des transactions avec/sans action
         for transact in self.transact:
             for transnoact in self.transnoact:
@@ -111,12 +114,10 @@ class graphe(gramPrintListener):
                     for state1 in transact[2]:
                         for state2 in transnoact[1]:
                             if state1 == state2:
-                                erreurs.append(
-                                   f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
-        # Suppression des doublons
-        erreur = []
-        [erreur.append(x) for x in erreurs if x not in erreur]
-        return "\n".join(erreur)
+                                erreurs.append(f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
+        unique_erreur = []
+        [unique_erreur.append(x) for x in erreurs if x not in unique_erreur]
+        return "\n".join(unique_erreur)
 
     def visualizeGraphe(self):
         viz = graphviz.Digraph("Graphe", comment="vive Markov")
@@ -278,7 +279,7 @@ class graphe(gramPrintListener):
                     g.format = 'png'
                     g.render(filename='gif/' + str(i) + "2")
                     os.remove("gif/" + str(i) + "2")
-                break
+                action = np.random.choice(np.arange(0, N_etat))
             else:
                 action = actions_possibles[np.random.randint(
                     len(actions_possibles))]
