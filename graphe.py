@@ -430,3 +430,27 @@ class graphe(gramPrintListener):
                 if s == self.dictStates[state]:
                     freq[s] += 1
         return freq/N 
+    
+    def sprt_SMC(self, propriété,alpha=0.01, beta=0.01, theta=0.5, eps=0.01, max_depth=5):
+        gamma1 = theta - eps
+        gamma0 = theta + eps
+        A = np.log(1-beta) - np.log(alpha)
+        B = np.log(beta) - np.log(1-alpha)
+        Rm = 0
+        Rtrue = np.log(gamma1) - np.log(gamma0)
+        Rfalse = np.log(1-gamma1) - np.log(1-gamma0)
+        i = 0
+        while Rm < A and Rm > B :
+            i += 1
+            s = self._parcoursRapideAlea(N_pas = max_depth)
+            if propriété(self.states[s]) :
+                Rm += Rtrue
+            else :
+                Rm += Rfalse 
+
+        print(f"i = {i} itérations")
+        print(f"A : {A}, B : {B} et Rm : {Rm}")
+        if Rm >= A :
+            return f"H1 : gamma < {theta} accepté"
+        elif Rm <= B :
+            return f"H0 : gamma >= {theta} accepté"
