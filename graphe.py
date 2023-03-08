@@ -27,7 +27,12 @@ class graphe(gramPrintListener):
         self.dictActions = {}
         for i, action in enumerate(self.actions):
             self.dictActions[action] = i
+        self.mat = self.grapheToMat()
+        self.actions_possibles = {}
+        for state in self.states:
+            self.actions_possibles[state] = [i for i in range(len(self.actions)) if np.any(self.mat[i, self.dictStates[state]])]  # Les actions}
         print(self._verifGraphe())
+        
 
     def __repr__(self):
         ret = ""
@@ -249,6 +254,8 @@ class graphe(gramPrintListener):
                 chemin = self._parcoursAlea(N_pas, print_txt, print_step, make_gif)
             case "notebook":
                 chemin = self._parcoursUser_notebook(N_pas, make_gif)
+            case "rapide":
+                return self._parcoursRapideAlea(N_pas)
             case _:
                 chemin = self._parcoursUser(N_pas, make_gif)
 
@@ -270,11 +277,12 @@ class graphe(gramPrintListener):
         mat = self.grapheToMat()
         chemin = [0]
         for i in range(N_pas):
-            g = self._visualizeGrapheState(self.states[etat])
+            if make_gif or (print_step > 0 and i % print_step == 0):
+                g = self._visualizeGrapheState(self.states[etat])
             if print_step > 0 and i % print_step == 0:
                 clear_output()
                 display(g)
-            actions_possibles = [i for i in range(len(self.actions)) if np.any(mat[i, etat])]  # Les actions
+            actions_possibles = self.actions_possibles[self.states[etat]]
             if len(actions_possibles) == 0:
                 if make_gif:
                     self._build_gif(i, ancien_etat, ancien_etat, 0, g)
@@ -294,6 +302,23 @@ class graphe(gramPrintListener):
             self._create_gif()
         return chemin
 
+    def _parcoursRapideAlea(self, N_pas=50) -> int:
+        """
+        Parcours du graphe en choisissant aléatoirement les actions et les états. 
+        N_pas : Nombre de pas à effectuer dans le graphe
+        """
+        N_etat = len(self.states)
+        etat = 0
+        for _ in range(N_pas):
+            actions_possibles = self.actions_possibles[self.states[etat]]
+            if len(actions_possibles) == 0:
+                action = np.random.choice(np.arange(0, N_etat))
+            else:
+                action = actions_possibles[np.random.randint(len(actions_possibles))]
+                proba = self.mat[action, etat] / np.sum(self.mat[action, etat])
+                etat = np.random.choice(np.arange(0, N_etat), p=proba)
+        return etat
+    
     def _parcoursUser_notebook(self, N_pas=50, make_gif=False) -> list:
         """
         Parcours du graphe en demandant à l'utilisateur les actions, et en choisissant aléatoirement les états.
@@ -311,7 +336,7 @@ class graphe(gramPrintListener):
             g = self._visualizeGrapheState(self.states[etat])
             display(g)
             print(f"L'état actuel est l'état {self.states[etat]}")
-            actions_possibles = [self.actions[i] for i in range(len(self.actions)) if np.any(mat[i, etat])]
+            actions_possibles = self.actions_possibles[self.states[etat]]
             print(f"Les actions possibles sont {actions_possibles}")
             action = input("Choisissez une action : ")
             while action not in actions_possibles:
@@ -345,7 +370,7 @@ class graphe(gramPrintListener):
             g = self._visualizeGrapheState(self.states[etat])
             print(f"L'état actuel est l'état {self.states[etat]}")
             print(f"L'état actuel est l'état {self.states[etat]}")
-            actions_possibles = [self.actions[i] for i in range(len(self.actions)) if np.any(mat[i, etat])]
+            actions_possibles = self.actions_possibles[self.states[etat]]
             print(f"Les actions possibles sont {actions_possibles}")
             action = input("Choisissez une action : ")
             while action not in actions_possibles:
@@ -392,3 +417,13 @@ class graphe(gramPrintListener):
         freq.columns.name = 'Freq'
 
         print(freq)
+
+    def montecarlo_SMC(self, eps=0.01, delta=0.05, max_depth = 5):
+        N = int((np.log(2) - np.log(delta))/(2*eps)**2)
+        freq = np.zeros(len(self.states))
+        for state in self.states:
+            for _ in range(N):
+                s = self._parcoursRapideAlea(N_pas=max_depth)
+                if s == self.dictStates[state]:
+                    freq[s] += 1
+        return freq/N 
