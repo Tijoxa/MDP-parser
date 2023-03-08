@@ -27,10 +27,13 @@ class graphe(gramPrintListener):
         self.dictActions = {}
         for i, action in enumerate(self.actions):
             self.dictActions[action] = i
+
         self.mat = self.grapheToMat()
         self.actions_possibles = {}
-        for state in self.states:
-            self.actions_possibles[state] = [i for i in range(len(self.actions)) if np.any(self.mat[i, self.dictStates[state]])]  # Les actions}
+        for int_state, state in enumerate(self.states):
+            self.actions_possibles[state] = [i for i in range(len(self.actions)) if np.any(self.mat[i, int_state])]  # Les actions
+            for int_action in range(len(self.actions)):
+                self.mat[int_action, int_state] /= np.sum(self.mat[int_action, int_state])
         print(self._verifGraphe())
         
 
@@ -312,10 +315,10 @@ class graphe(gramPrintListener):
         for _ in range(N_pas):
             actions_possibles = self.actions_possibles[self.states[etat]]
             if len(actions_possibles) == 0:
-                action = np.random.choice(np.arange(0, N_etat))
+                action = np.random.randint(N_etat)
             else:
                 action = actions_possibles[np.random.randint(len(actions_possibles))]
-                proba = self.mat[action, etat] / np.sum(self.mat[action, etat])
+                proba = self.mat[action, etat]
                 etat = np.random.choice(np.arange(0, N_etat), p=proba)
         return etat
     
