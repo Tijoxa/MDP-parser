@@ -107,8 +107,52 @@ def montecarlo_rl(g : graphe):
 def td_rl(g : graphe):
     pass
 
-def sarsa_rl(g: graphe):
-    pass
+def sarsa_rl(g: graphe, T_tot=1000, gamma=0.5):
+    mat = g.grapheToMat()
+    N_etats = len(g.states)
+    N_actions = len(g.actions)
+    q0 = np.zeros((N_etats,N_actions))
+    visited = np.zeros((N_etats,N_actions))
+    s = 0
+    # Sélection de l'action a et de s1
+    actions_possibles = g.actions_possibles[g.states[s]]
+    if len(actions_possibles) == 0:
+        s1 = 0
+        a = np.random.choice(np.arange(0, N_actions))
+        r = g.reward[0]
+    else : 
+        a = actions_possibles[np.random.randint(len(actions_possibles))]
+        proba = mat[a, s] / np.sum(mat[a, s])
+        s1 = np.random.choice(np.arange(0, N_etats), p=proba)
+        r = g.reward[s]
+
+    for _ in range(T_tot):
+        # Sélection de l'action a1 et de s2
+        actions_possibles = g.actions_possibles[g.states[s1]]
+        if len(actions_possibles) == 0:
+            s2 = 0
+            a1 = np.random.choice(np.arange(0, N_actions))
+            r = g.reward[0]
+        else : 
+            a1 = actions_possibles[np.random.randint(len(actions_possibles))]
+            proba = mat[a, s1] / np.sum(mat[a, s1])
+            s2 = np.random.choice(np.arange(0, N_etats), p=proba)
+            r = g.reward[s1]
+
+        q1 = q0
+        delta = r + gamma*q0[s1][a1] - q0[s][a]
+
+        visited[s][a] += 1
+        q1[s][a] = q0[s][a] + (1/visited[s][a])*delta
+
+        q0=q1
+        s=s1
+        s1=s2
+        a=a1
+
+    print(q1)
+    policy = np.argmax(q1, axis=1)
+    return policy
 
 def qlearning_rl(g: graphe, T_tot=1000, gamma=0.5):
     mat = g.grapheToMat()
