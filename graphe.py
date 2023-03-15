@@ -480,3 +480,10 @@ class graphe(gramPrintListener):
             return f"H1 : gamma < {theta} accepté"
         elif Rm <= B :
             return f"H0 : gamma >= {theta} accepté"
+        
+    def iter_valeurs(self, gamma, eps = 0.1):
+        pass
+
+    def iter_politique(self, gamma):
+        pass
+    
