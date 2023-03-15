@@ -13,8 +13,12 @@ class gramPrintListener(gramListener):
         self.transnoact = []
         pass
 
-    def enterDefstates(self, ctx):
+    def enterStatenoreward(self, ctx):
         self.states = [str(x) for x in ctx.ID()]
+
+    def enterStatereward(self, ctx):
+        self.states = [str(x) for x in ctx.ID()]
+        self.reward = [str(x) for x in ctx.INT()]
 
     def enterDefactions(self, ctx):
         self.actions = [str(x) for x in ctx.ID()]

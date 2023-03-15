@@ -27,14 +27,14 @@ class graphe(gramPrintListener):
         self.dictActions = {}
         for i, action in enumerate(self.actions):
             self.dictActions[action] = i
-
+        print(self._verifGraphe())
         self.mat = self.grapheToMat()
         self.actions_possibles = {}
         for int_state, state in enumerate(self.states):
             self.actions_possibles[state] = [i for i in range(len(self.actions)) if np.any(self.mat[i, int_state])]  # Les actions
             for int_action in range(len(self.actions)):
                 self.mat[int_action, int_state] /= np.sum(self.mat[int_action, int_state])
-        print(self._verifGraphe())
+        
         
 
     def __repr__(self):
