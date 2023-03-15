@@ -138,4 +138,7 @@ def qlearning_rl(g: graphe, T_tot=1000, gamma=0.5):
 
         q0=q1
         s=s1
-    return q1
+
+    print(q1)
+    policy = np.argmax(q1, axis=1)
+    return policy
