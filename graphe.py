@@ -390,6 +390,32 @@ class graphe(gramPrintListener):
         if make_gif:
             self._create_gif()
         return chemin
+    
+    def _create_Matrix(self):
+        pass # TODO
+
+    def _create_vector(self):
+        pass # TODO
+
+    def pctl_finally(self, state):
+        assert self.transact == [], "Il ne s'agit pas d'une MC"
+        A = self._create_Matrix()
+        b = self._create_vector()
+        result = np.linalg.inv(np.eye(len(A)) - A)@b
+        return result
+
+    def pctl_finally_max_bound(self, state, max_bound: int):
+        assert self.transact == [], "Il ne s'agit pas d'une MC"
+        A = self._create_Matrix()
+        b = self._create_vector()
+        x0 = np.zeros((len(A), 1))
+        for _ in range(max_bound):
+            x0 = A@x0 + b
+        return x0
+
+    def pctl_mdp(self):
+        assert self.transnoact == [], "Il ne s'agit pas d'une MDP"
+        # TODO
 
     def statistiques(self, N_pas=50, N_parcours=50):
         """
