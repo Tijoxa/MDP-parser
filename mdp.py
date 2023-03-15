@@ -18,7 +18,7 @@ class gramPrintListener(gramListener):
 
     def enterStatereward(self, ctx):
         self.states = [str(x) for x in ctx.ID()]
-        self.reward = [str(x) for x in ctx.INT()]
+        self.reward = [int(str(x)) for x in ctx.INT()]
 
     def enterDefactions(self, ctx):
         self.actions = [str(x) for x in ctx.ID()]

@@ -287,7 +287,7 @@ class graphe(gramPrintListener):
             if len(actions_possibles) == 0:
                 if make_gif:
                     self._build_gif(i, ancien_etat, ancien_etat, 0, g)
-                action = np.random.choice(np.arange(0, N_etat))
+                action = np.random.choice(np.arange(0, len(self.actions)))
             else:
                 action = actions_possibles[np.random.randint(len(actions_possibles))]
                 proba = mat[action, etat] / np.sum(mat[action, etat])
