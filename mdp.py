@@ -11,6 +11,7 @@ class gramPrintListener(gramListener):
         self.actions = []
         self.transact = []
         self.transnoact = []
+        self.reward = []
         pass
 
     def enterStatenoreward(self, ctx):

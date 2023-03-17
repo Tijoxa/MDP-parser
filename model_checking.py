@@ -132,6 +132,16 @@ def sprt_SMC(g : graphe, propriété,alpha=0.01, beta=0.01, theta=0.5, eps=0.01,
     elif Rm <= B :
         return f"H0 : gamma >= {theta} accepté"
 
+def mean_reward_mc(g: graphe, state: str):
+    state = g.dictStates[state]
+    rs = g.reward[state] + np.sum(g.mat[0][state]*g.reward)
+    return rs
+
+def mean_reward_mdp(g: graphe, state: str):
+    state = g.dictStates[state]
+    rs = g.reward[state] + np.max([np.sum(g.mat[action][state]*g.reward) for action in range(len(g.actions))])
+    return rs
+
 def bellman(g: graphe, gamma: float, V0: list, V1: list, Sigma: list):
     for i in range(len(g.states)): # s
         rw = g.reward[i] # r(s)
@@ -286,3 +296,6 @@ def qlearning_rl(g: graphe, T_tot=1000, gamma=0.5):
     print(q1)
     policy = np.argmax(q1, axis=1)
     return policy
+
+def smc_mdp(g: graphe):
+    pass

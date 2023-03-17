@@ -19,7 +19,6 @@ class graphe(gramPrintListener):
         walker = ParseTreeWalker()
         walker.walk(self, tree)
         self.dictStates = {}
-        self.reward = []
         for i, state in enumerate(self.states):
             self.dictStates[state] = i
         self.dictActions = {}
