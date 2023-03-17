@@ -49,7 +49,8 @@ def pctl_finally(g : graphe, states):
     b = _create_vector(g, S1,S2)
     result = np.linalg.inv(np.eye(len(A)) - A)@b
     states = [g.states[x] for x in S2]
-    return states, result
+    result = pd.DataFrame(result, columns = ["P"], index=states).transpose()
+    return result
 
 def pctl_finally_max_bound(g : graphe, states, max_bound: int):
     assert g.transact == [], "Il ne s'agit pas d'une MC"
@@ -59,6 +60,8 @@ def pctl_finally_max_bound(g : graphe, states, max_bound: int):
     x0 = np.zeros(len(b))
     for _ in range(max_bound):
         x0 = A@x0 + b
+    states = [g.states[x] for x in S2]
+    x0 = pd.DataFrame(x0, columns = ["P"], index=states).transpose()
     return x0
 
 def pctl_mdp(g : graphe):
