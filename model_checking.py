@@ -2,23 +2,13 @@ from graphe import graphe
 import numpy as np
 import pandas as pd
 from typing import List
+from scipy.optimize import linprog
 
-# TODO: implémenter calcul probas pour mdp et mc (avec s0, s1 et s?), utiliser scipy.linprog pour mdp
-# TODO: implémenter calcul récompenses pour mdp et mc - estimation max_min pour MDP
+# TODO: implémenter calcul probas pour mdp (avec s0, s1 et s?), utiliser scipy.linprog.
+# TODO : BONUS : Compatibilité fonctions pctl / MC accessibilité pour les récompenses
 # TODO : implémenter algo de RL pour les MDP
 
-def _identify(g:graphe, target_states:list) -> list[list]:
-    """
-    Identification des ensembles d'états pouvant atteindre un état donné en argument :
-    - target_states : liste d'états à atteindre
-    Sorties : 
-    - S1 : états qui correspondent à "state"
-    - S2 : états qui peuvent atteindre "state"
-    """
-    # Recherche des successeurs 
-    N = len(g.states)
-    target_states = [g.dictStates[state] for state in target_states]
-    successeurs = [[j for j in range(N) if g.mat[0][i][j]] for i in range(N)]  
+def _accesibility(successeurs: list, target_states: list, N: int):
     accessible = []
     new_accessible = target_states.copy()
     while new_accessible != accessible:
@@ -32,11 +22,25 @@ def _identify(g:graphe, target_states:list) -> list[list]:
     S2.sort()
     return S1,S2
 
-def _create_Matrix(g:graphe, S2:list) -> list:
+def _identify(g: graphe, target_states: list):
+    """
+    Identification des ensembles d'états pouvant atteindre un état donné en argument :
+    - target_states : liste d'états à atteindre
+    Sorties : 
+    - S1 : états qui correspondent à "state"
+    - S2 : états qui peuvent atteindre "state"
+    """
+    # Recherche des successeurs 
+    N = len(g.states)
+    target_states = [g.dictStates[state] for state in target_states]
+    successeurs = [[j for j in range(N) if g.mat[0][i][j] > 0] for i in range(N)]  
+    return _accesibility(successeurs, target_states, N)
+
+def _create_Matrix_mc(g: graphe, S2: list) -> list:
     A = [[g.mat[0][i][j] for j in S2] for i in S2]
     return np.array(A)
 
-def _create_vector(g:graphe, S1:list, S2:list):
+def _create_vector_mc(g: graphe, S1: list, S2: list):
     b = np.zeros(len(S2))
     for k in range(len(S2)):
         state = S2[k]
@@ -46,8 +50,8 @@ def _create_vector(g:graphe, S1:list, S2:list):
 def pctl_finally(g : graphe, states):
     assert g.transact == [], "Il ne s'agit pas d'une MC"
     S1,S2 = _identify(g, states)
-    A = _create_Matrix(g, S2)
-    b = _create_vector(g, S1,S2)
+    A = _create_Matrix_mc(g, S2)
+    b = _create_vector_mc(g, S1,S2)
     result = np.linalg.inv(np.eye(len(A)) - A)@b
     states = [g.states[x] for x in S2]
     result = pd.DataFrame(result, columns = ["P"], index=states).transpose()
@@ -56,8 +60,8 @@ def pctl_finally(g : graphe, states):
 def pctl_finally_max_bound(g : graphe, states, max_bound: int):
     assert g.transact == [], "Il ne s'agit pas d'une MC"
     S1,S2 = _identify(g, states)
-    A = _create_Matrix(g, S2)
-    b = _create_vector(g, S1,S2)
+    A = _create_Matrix_mc(g, S2)
+    b = _create_vector_mc(g, S1,S2)
     x0 = np.zeros(len(b))
     for _ in range(max_bound):
         x0 = A@x0 + b
@@ -65,9 +69,68 @@ def pctl_finally_max_bound(g : graphe, states, max_bound: int):
     x0 = pd.DataFrame(x0, columns = ["P"], index=states).transpose()
     return x0
 
-def pctl_mdp(g : graphe):
-    assert g.transnoact == [], "Il ne s'agit pas d'une MDP"
-    # TODO
+def _identifyMDP(g: graphe, target_states:list):
+    """
+    Identification des ensembles d'états pouvant atteindre un état donné en argument :
+    - target_states : liste d'états à atteindre
+    Sorties : 
+    - S1 : états qui correspondent à "state"
+    - S2 : états qui peuvent atteindre "state"
+    """
+    # Recherche des successeurs 
+    N = len(g.states)
+    target_states = [g.dictStates[state] for state in target_states]
+    successeurs_all_actions = []
+    [successeurs_all_actions.append([[j for j in range(N) if g.mat[action][i][j] > 0] for action in range(len(g.actions))]) for i in range(N)]
+    successeurs_all_actions = [sum(x,[]) for x in successeurs_all_actions]
+    successeurs = []
+    for succ in successeurs_all_actions:
+        L = []
+        [L.append(x) for x in succ if x not in L]
+        successeurs.append(L)  
+    return _accesibility(successeurs, target_states, N)
+
+def _create_Matrix_mdp(g: graphe, S2: list):
+    N_actions = len(g.actions)
+    N_states = len(g.states)
+    N_S2 = len(S2)
+    A_projected = []
+    for action in range(N_actions):
+        scheduler = [action]*N_states
+        projection = projection_mdp_to_mc(g.mat, scheduler)
+        projection_A = np.array([[projection[i][j] for j in S2] for i in S2])
+        projection_A = np.eye(N_S2,N_S2) - projection_A 
+        A_projected.append(projection_A)
+    A = np.zeros(shape=(N_S2*N_actions,N_S2))
+    for i in range(N_S2):
+        for j in range(N_actions):
+            A[i*(N_actions) + j] = A_projected[j][i]
+    return A
+
+def _create_vector_mdp(g: graphe, S1: list, S2: list):
+    N_actions = len(g.actions)
+    N_S2 = len(S2)
+    b_actions = np.zeros((N_S2, N_actions))
+    for action in range(len(g.actions)):
+        for k in range(len(S2)):
+            state = S2[k]
+            b_actions[k][action] += sum([g.mat[action][state][i] for i in S1])
+    b = np.zeros(shape=(N_S2*N_actions))
+    for state in range(N_S2):
+        b[state*N_actions:state*N_actions+N_actions] = b_actions[state]
+    return b
+
+def pctl_mdp(g : graphe, states):
+    assert g.transact != [], "Il ne s'agit pas d'une MDP"
+    S1,S2 = _identifyMDP(g, states)
+    A = _create_Matrix_mdp(g, S2)
+    b = _create_vector_mdp(g, S1,S2)
+    c = np.ones(len(S2)) # Fonction objectif [1,1,1..] car on veut minimiser c.x la somme des probabilités, cf diapo
+    res = linprog(c, A_ub=-A, b_ub=-b, bounds=(0,1)) # On a A et b tels que A.x >= b, donc on passe -A et -b en argument
+    states = [g.states[x] for x in S2]
+    x = pd.DataFrame(res.x, columns = ["P"], index=states).transpose()
+    return x
+
 
 def statistiques(g : graphe, N_pas=50, N_parcours=50):
     """
