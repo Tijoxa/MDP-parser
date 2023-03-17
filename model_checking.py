@@ -158,17 +158,48 @@ def iter_valeurs(g: graphe, gamma: float, eps: float = 0.1):
     
     return V1, Sigma
 
+def projection_mdp_to_mc(matrix: np.ndarray, scheduler):
+    result = np.zeros(matrix.shape[1:3])
+    for i, adv in enumerate(scheduler):
+        result[i, :] = matrix[adv, i, :]
+
+    return result
+
+def bellman_2(g: graphe, V: np.ndarray):
+    Sigma = [0 for _ in range(len(g.states))]
+    for i in range(len(g.states)): # s
+        best_action = 0
+        best_adding = 0
+        for j in range(len(g.actions)): # a
+            if np.any(g.mat[j, i, :]):
+                # k is s'
+                adding = np.sum([g.mat[j, i, k] * V[k] for k in range(len(g.states))])
+            if adding > best_adding:
+                best_adding = adding
+                best_action = j
+        Sigma[i] = best_action
+    return Sigma
+
 def iter_politique(g: graphe, gamma):
     Sigma_0 = [0 for _ in range(len(g.states))]
-    V = np.zeros((1, len(g.states)))
+    rw = np.array(g.reward)
+    projection_mat = projection_mdp_to_mc(g.mat, Sigma_0)
+    A = np.eye(projection_mat.shape[0]) - gamma * projection_mat
+    V = np.linalg.solve(A, rw)
+    if not np.allclose(np.dot(A, V), rw):
+        print("La résolution a échouée")
+    Sigma_1 = bellman_2(g, V)
+    while Sigma_0 != Sigma_1:
+        Sigma_0 = Sigma_1.copy()
+        rw = np.array(g.reward)
+        projection_mat = projection_mdp_to_mc(g.mat, Sigma_0)
+        A = np.eye(projection_mat.shape[0]) - gamma * projection_mat
+        V = np.linalg.solve(A, rw)
+        if not np.allclose(np.dot(A, V), rw):
+            print("La résolution a échouée")
+        Sigma_1 = bellman_2(g, V)
 
-    """Pseudo-code
-    - initialiser Sigma pour qu'il prenne la première action disponible par état
-    - r(s) est accessible avec g.reward
-    - créer la matrice qui permet d'avoir P(s, Sigma(s), s')
-        - pour cela, on a accès à g.mat
-        - chaque ligne de la matrice résultante sera prise avec Sigma(s)
-    """
+    return V, Sigma_1
 
 def montecarlo_rl(g : graphe):
     pass
