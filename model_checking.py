@@ -17,9 +17,7 @@ def _accesibility(successeurs: list, target_states: list, N: int):
             if pred not in accessible and len([x for x in accessible if x in successeurs[pred]]) > 0:
                 new_accessible.append(pred)
     S1 = accessible[:len(target_states)]
-    S2 = accessible[len(target_states):]
-    S1.sort()
-    S2.sort()
+    S2 = accessible[len(target_states):] 
     return S1,S2
 
 def _identify(g: graphe, target_states: list):
@@ -34,7 +32,25 @@ def _identify(g: graphe, target_states: list):
     N = len(g.states)
     target_states = [g.dictStates[state] for state in target_states]
     successeurs = [[j for j in range(N) if g.mat[0][i][j] > 0] for i in range(N)]  
-    return _accesibility(successeurs, target_states, N)
+    S1,S2 = _accesibility(successeurs, target_states, N)
+    # Ajout dans S1 des prédecesseurs de S2 qui vont avec une probabilité 1 dans S1.
+    to_switch = []
+    change = True
+    while change:
+        change = False
+        for i in S2:
+            for j in S1:
+                if g.mat[0][i][j] == 1:
+                    to_switch.append(i)
+                    change = True
+        if change :
+            S1 += to_switch
+            S2 = [x for x in S2 if x not in to_switch]
+            to_switch = []
+    S1.sort()
+    S2.sort()
+    return S1,S2
+                     
 
 def _create_Matrix_mc(g: graphe, S2: list) -> list:
     A = [[g.mat[0][i][j] for j in S2] for i in S2]
