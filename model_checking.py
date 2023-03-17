@@ -1,6 +1,7 @@
 from graphe import graphe
 import numpy as np
 import pandas as pd
+from typing import List
 
 # TODO: implémenter calcul probas pour mdp et mc (avec s0, s1 et s?), utiliser scipy.linprog pour mdp
 # TODO: implémenter calcul récompenses pour mdp et mc - estimation max_min pour MDP
@@ -190,7 +191,7 @@ def bellman_2(g: graphe, V: np.ndarray):
         Sigma[i] = best_action
     return Sigma
 
-def iter_politique(g: graphe, gamma):
+def iter_politique(g: graphe, gamma: float):
     def auxiliaire(g: graphe, Sigma_0: list, gamma: float):
         rw = np.array(g.reward)
         projection_mat = projection_mdp_to_mc(g.mat, Sigma_0)
@@ -209,8 +210,25 @@ def iter_politique(g: graphe, gamma):
 
     return V, Sigma_1
 
-def montecarlo_rl(g : graphe):
-    pass
+def montecarlo_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: int=10, N: int=50):
+    mat_projected = projection_mdp_to_mc(g.mat, Sigma)
+    V_mean = []
+    for _ in range(k): # nombre de simulations
+        V = [0 for _ in range(len(g.states))]
+        visited = [False for _ in range(len(g.states))]
+        s = np.random.randint(len(g.states))
+        rw = [g.reward[s]]
+        visited[s] = True
+        V[s] = (1 - alpha) * V[s] + alpha * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
+        for _ in range(N):
+            s = np.random.choice(len(g.states), p=mat_projected[s, :])
+            if visited[s] == False:
+                rw.append(g.reward[s])
+                visited[s] = True
+                V[s] = (1 - alpha) * V[s] + alpha * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
+        V_mean.append(V)
+    result = np.mean(V_mean, axis=0)
+    return result
 
 def td_rl(g : graphe):
     pass
