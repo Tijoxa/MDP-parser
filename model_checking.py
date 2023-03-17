@@ -3,26 +3,60 @@ import numpy as np
 import pandas as pd
 
 # TODO: implémenter calcul probas pour mdp et mc (avec s0, s1 et s?), utiliser scipy.linprog pour mdp
-# TODO: implémenter calcul récompenses pour mdp et mc
+# TODO: implémenter calcul récompenses pour mdp et mc - estimation max_min pour MDP
+# TODO : implémenter algo de RL pour les MDP
 
-def _create_Matrix(g : graphe):
-    pass # TODO
+def _identify(g:graphe, target_states:list) -> list[list]:
+    """
+    Identification des ensembles d'états pouvant atteindre un état donné en argument :
+    - target_states : liste d'états à atteindre
+    Sorties : 
+    - S1 : états qui correspondent à "state"
+    - S2 : états qui peuvent atteindre "state"
+    """
+    # Recherche des successeurs 
+    N = len(g.states)
+    target_states = [g.dictStates[state] for state in target_states]
+    successeurs = [[j for j in range(N) if g.mat[0][i][j]] for i in range(N)]  
+    accessible = []
+    new_accessible = target_states.copy()
+    while new_accessible != accessible:
+        accessible = new_accessible.copy()
+        for pred in range(N):
+            if pred not in accessible and len([x for x in accessible if x in successeurs[pred]]) > 0:
+                new_accessible.append(pred)
+    S1 = accessible[:len(target_states)]
+    S2 = accessible[len(target_states):]
+    S1.sort()
+    S2.sort()
+    return S1,S2
 
-def _create_vector(g : graphe):
-    pass # TODO
+def _create_Matrix(g:graphe, S2:list) -> list:
+    A = [[g.mat[0][i][j] for j in S2] for i in S2]
+    return np.array(A)
 
-def pctl_finally(g : graphe, state):
+def _create_vector(g:graphe, S1:list, S2:list):
+    b = np.zeros(len(S2))
+    for k in range(len(S2)):
+        state = S2[k]
+        b[k] += sum([g.mat[0][state][i] for i in S1])
+    return b
+
+def pctl_finally(g : graphe, states):
     assert g.transact == [], "Il ne s'agit pas d'une MC"
-    A = g._create_Matrix()
-    b = g._create_vector()
+    S1,S2 = _identify(g, states)
+    A = _create_Matrix(g, S2)
+    b = _create_vector(g, S1,S2)
     result = np.linalg.inv(np.eye(len(A)) - A)@b
-    return result
+    states = [g.states[x] for x in S2]
+    return states, result
 
-def pctl_finally_max_bound(g : graphe, state, max_bound: int):
+def pctl_finally_max_bound(g : graphe, states, max_bound: int):
     assert g.transact == [], "Il ne s'agit pas d'une MC"
-    A = g._create_Matrix()
-    b = g._create_vector()
-    x0 = np.zeros((len(A), 1))
+    S1,S2 = _identify(g, states)
+    A = _create_Matrix(g, S2)
+    b = _create_vector(g, S1,S2)
+    x0 = np.zeros(len(b))
     for _ in range(max_bound):
         x0 = A@x0 + b
     return x0
