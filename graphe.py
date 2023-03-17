@@ -30,7 +30,8 @@ class graphe(gramPrintListener):
         for int_state, state in enumerate(self.states):
             self.actions_possibles[state] = [i for i in range(len(self.actions)) if np.any(self.mat[i, int_state])]  # Les actions
             for int_action in range(len(self.actions)):
-                self.mat[int_action, int_state] /= np.sum(self.mat[int_action, int_state])
+                if np.any(self.mat[int_action, int_state, :]):
+                    self.mat[int_action, int_state] /= np.sum(self.mat[int_action, int_state])
         
         
 

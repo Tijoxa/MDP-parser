@@ -121,8 +121,6 @@ def iter_valeurs(g: graphe, gamma: float, eps: float = 0.1):
     
     return V1, Sigma
 
-def iter_politique(g : graphe, gamma):
-    pass
 
 def montecarlo_rl(g : graphe):
     pass
