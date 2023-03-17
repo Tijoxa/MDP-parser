@@ -103,6 +103,7 @@ def bellman(g: graphe, gamma: float, V0: list, V1: list, Sigma: list):
         for j in range(len(g.actions)): # a
             if np.any(g.mat[j, i, :]):
                 # k is s'
+                adding = np.sum([g.mat[j, i, k] * V0[k] for k in range(len(g.states))])
             if adding > best_adding:
                 best_adding = adding
                 best_action = j
