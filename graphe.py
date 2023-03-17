@@ -6,7 +6,6 @@ import moviepy.editor as mpy
 import os
 import shutil
 
-# TODO: créer des boucles aux dead ends
 
 
 class graphe(gramPrintListener):
@@ -93,7 +92,13 @@ class graphe(gramPrintListener):
         """
         erreurs = []
         check_states = [[trans[0]] + trans[2] for trans in self.transact] + [[trans[0]] + trans[1] for trans in self.transnoact]
+        check_terminal = [trans[0] for trans in self.transact] + [trans[0] for trans in self.transnoact]
         check_actions = [trans[1] for trans in self.transact]
+        # Vérification des états terminaux
+        for state in self.states:
+            if state not in check_terminal :
+                erreurs.append(f"Noeud terminal {state} sans aucune transition")
+                self.transnoact.append([state,[state],[1]])
         # Vérification de transact
         for state in sum(check_states, []):
             if not (state in self.states):
