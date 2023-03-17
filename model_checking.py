@@ -291,7 +291,7 @@ def iter_politique(g: graphe, gamma: float):
 
 def montecarlo_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: int=10, N: int=50):
     mat_projected = projection_mdp_to_mc(g.mat, Sigma)
-    V_mean = []
+    V_glob = []
     for _ in range(k): # nombre de simulations
         V = [0 for _ in range(len(g.states))]
         visited = [False for _ in range(len(g.states))]
@@ -305,12 +305,29 @@ def montecarlo_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.
                 rw.append(g.reward[s])
                 visited[s] = True
                 V[s] = (1 - alpha) * V[s] + alpha * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
-        V_mean.append(V)
-    result = np.mean(V_mean, axis=0)
-    return result
+        V_glob.append(V)
+    V_mean = np.mean(V_glob, axis=0)
+    return V_mean
 
-def td_rl(g : graphe):
-    pass
+def td_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: int=10, N: int=50):
+    mat_projected = projection_mdp_to_mc(g.mat, Sigma)
+    V_glob = []
+    for _ in range(k):
+        V = [0 for _ in range(len(g.states))]
+        s = np.random.randint(len(g.states))
+        next_s = np.random.choice(len(g.states), p=mat_projected[s, :])
+        rw = g.reward[s]
+        difference_temporelle = rw + gamma * V[next_s] - V[s]
+        V[s] += alpha * difference_temporelle
+        for _ in range(N):
+            s = next_s
+            next_s = np.random.choice(len(g.states), p=mat_projected[s, :])
+            rw = g.reward[s]
+            difference_temporelle = rw + gamma * V[next_s] - V[s]
+            V[s] += alpha * difference_temporelle
+        V_glob.append(V)
+    V_mean = np.mean(V_glob, axis=0)
+    return V_mean
 
 def sarsa_rl(g: graphe, T_tot=1000, gamma=0.5):
     mat = g.grapheToMat()
