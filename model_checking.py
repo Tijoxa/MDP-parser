@@ -96,15 +96,14 @@ def sprt_SMC(g : graphe, propriété,alpha=0.01, beta=0.01, theta=0.5, eps=0.01,
         return f"H0 : gamma >= {theta} accepté"
 
 def bellman(g: graphe, gamma: float, V0: list, V1: list, Sigma: list):
-    mat = g.grapheToMat()
     for i in range(len(g.states)): # s
         rw = g.reward[i] # r(s)
         best_action = 0
         best_adding = 0
         for j in range(len(g.actions)): # a
-            if np.any(mat[j, i, :]):
+            if np.any(g.mat[j, i, :]):
                 # k is s'
-                adding = np.sum([mat[j, i, k] * V0[k] for k in range(len(g.states))]) / np.sum([mat[j, i, k] for k in range(len(g.states))])
+                adding = np.sum([g.mat[j, i, k] * V0[k] for k in range(len(g.states))]) / np.sum([g.mat[j, i, k] for k in range(len(g.states))])
             if adding > best_adding:
                 best_adding = adding
                 best_action = j
@@ -112,7 +111,6 @@ def bellman(g: graphe, gamma: float, V0: list, V1: list, Sigma: list):
         Sigma[i] = best_action
 
 def iter_valeurs(g: graphe, gamma: float, eps: float = 0.1):
-    mat = g.grapheToMat()
     V0 = [0 for _ in range(len(g.states))]
     V1 = [0 for _ in range(len(g.states))]
     Sigma = [0 for _ in range(len(g.states))]
