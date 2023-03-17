@@ -191,16 +191,7 @@ def bellman_2(g: graphe, V: np.ndarray):
     return Sigma
 
 def iter_politique(g: graphe, gamma):
-    Sigma_0 = [0 for _ in range(len(g.states))]
-    rw = np.array(g.reward)
-    projection_mat = projection_mdp_to_mc(g.mat, Sigma_0)
-    A = np.eye(projection_mat.shape[0]) - gamma * projection_mat
-    V = np.linalg.solve(A, rw)
-    if not np.allclose(np.dot(A, V), rw):
-        print("La résolution a échouée")
-    Sigma_1 = bellman_2(g, V)
-    while Sigma_0 != Sigma_1:
-        Sigma_0 = Sigma_1.copy()
+    def auxiliaire(g: graphe, Sigma_0: list, gamma: float):
         rw = np.array(g.reward)
         projection_mat = projection_mdp_to_mc(g.mat, Sigma_0)
         A = np.eye(projection_mat.shape[0]) - gamma * projection_mat
@@ -208,6 +199,13 @@ def iter_politique(g: graphe, gamma):
         if not np.allclose(np.dot(A, V), rw):
             print("La résolution a échouée")
         Sigma_1 = bellman_2(g, V)
+        return Sigma_1, V
+    
+    Sigma_0 = [0 for _ in range(len(g.states))]
+    Sigma_1, V = auxiliaire(g, Sigma_0, gamma)
+    while Sigma_0 != Sigma_1:
+        Sigma_0 = Sigma_1.copy()
+        Sigma_1, V = auxiliaire(g, Sigma_0, gamma)
 
     return V, Sigma_1
 
