@@ -120,8 +120,8 @@ class graphe(gramPrintListener):
 
     def visualizeGraphe(self):
         viz = graphviz.Digraph("Graphe", comment="vive Markov")
-        for state in self.states:
-            viz.node(state)
+        for state, reward in zip(self.states, self.reward):
+            viz.node(state, f"{state}:{reward}")
 
         for transNoAct in self.transnoact:
             origin_state = transNoAct[0]
