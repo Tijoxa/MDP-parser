@@ -116,6 +116,7 @@ def iter_valeurs(g: graphe, gamma: float, eps: float = 0.1):
     Sigma = [0 for _ in range(len(g.states))]
     bellman(g, gamma, V0, V1, Sigma)
     while np.linalg.norm(np.array(V1) - np.array(V0)) > eps:
+        V0 = V1.copy()
         bellman(g, gamma, V0, V1, Sigma)
     
     return V1, Sigma
