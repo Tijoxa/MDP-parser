@@ -120,6 +120,17 @@ def iter_valeurs(g: graphe, gamma: float, eps: float = 0.1):
     
     return V1, Sigma
 
+def iter_politique(g: graphe, gamma):
+    Sigma_0 = [0 for _ in range(len(g.states))]
+    V = np.zeros((1, len(g.states)))
+
+    """Pseudo-code
+    - initialiser Sigma pour qu'il prenne la première action disponible par état
+    - r(s) est accessible avec g.reward
+    - créer la matrice qui permet d'avoir P(s, Sigma(s), s')
+        - pour cela, on a accès à g.mat
+        - chaque ligne de la matrice résultante sera prise avec Sigma(s)
+    """
 
 def montecarlo_rl(g : graphe):
     pass
