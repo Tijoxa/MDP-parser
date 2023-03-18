@@ -4,6 +4,23 @@ import graphe
 import model_checking
 
 
+MDP_PATH = "exemples/manchot2bras.mdp"
+"""Content of ex.mdp:
+States S0:0,S1:100,S2:5,S3:500,S4:3;
+Actions a,b;
+S0[a]->1:S1 + 1:S2;
+S0[b]->1:S3 + 9:S4;
+S1 -> 1:S0;
+S2 -> 1:S0;
+S3 -> 1:S0;
+S4 -> 1:S0;
+"""
+graph = graphe.graphe(MDP_PATH)
+
+MDP_RW_PATH = "exemples/exreward.mdp"
+graph_rw = graphe.graphe(MDP_RW_PATH)
+
+
 def test_pctl_finally():
     assert True
 
