@@ -357,7 +357,7 @@ def sarsa_rl(g: graphe, T_tot=1000, gamma=0.5):
             r = g.reward[0]
         else : 
             a1 = actions_possibles[np.random.randint(len(actions_possibles))]
-            proba = mat[a, s1] / np.sum(mat[a, s1])
+            proba = mat[a1, s1] / np.sum(mat[a1, s1])
             s2 = np.random.choice(np.arange(0, N_etats), p=proba)
             r = g.reward[s1]
 
