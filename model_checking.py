@@ -4,7 +4,6 @@ import pandas as pd
 from typing import List
 from scipy.optimize import linprog
 
-# TODO: implémenter calcul probas pour mdp (avec s0, s1 et s?), utiliser scipy.linprog.
 # TODO : BONUS : Compatibilité fonctions pctl / MC accessibilité pour les récompenses
 # TODO : implémenter algo de RL pour les MDP
 
@@ -208,9 +207,11 @@ def sprt_SMC(g : graphe, propriété,alpha=0.01, beta=0.01, theta=0.5, eps=0.01,
     print(f"i = {i} itérations")
     print(f"A : {A}, B : {B} et Rm : {Rm}")
     if Rm >= A :
-        return f"H1 : gamma < {theta} accepté"
+        print(f"H1 : gamma < {theta} accepté")
+        return False
     elif Rm <= B :
-        return f"H0 : gamma >= {theta} accepté"
+        print(f"H0 : gamma >= {theta} accepté")
+        return True
 
 def mean_reward_mc(g: graphe, state: str):
     state = g.dictStates[state]
@@ -409,5 +410,78 @@ def qlearning_rl(g: graphe, T_tot=1000, gamma=0.5):
     policy = np.argmax(q1, axis=1)
     return policy
 
-def smc_mdp(g: graphe):
-    pass
+def _scheduler_evaluate(g: graphe, Sigma: List[float], N: int, phi, k: int=50):
+    """
+    Paramètres:
+    - N : Nombre maximum d'échantillons
+    - k : Profondeur de parcours
+    - phi : Propriété à vérifier
+    """
+    argmax_Sigma = np.argmax(Sigma, axis=1)
+    mat_projected = projection_mdp_to_mc(g.mat, argmax_Sigma)
+    R_plus = np.zeros_like(Sigma)
+    R_moins = np.zeros_like(Sigma)
+    Q_hat = Sigma.copy()
+    for _ in range(N):
+        s = 0
+        a = 0
+        for _ in range(k):
+            s = np.random.choice(len(g.states), p=mat_projected[s, :])
+            a = argmax_Sigma[s]
+            if phi(s): # if s satisfies phi
+                R_plus[s][a] += 1
+            else:
+                R_moins[s][a] += 1
+    for s in range(len(g.states)):
+        for a in range(len(g.actions)):
+            if R_plus[s][a] != 0 or R_moins[s][a] != 0:
+                Q_hat[s][a] = R_plus[s][a] / (R_plus[s][a] + R_moins[s][a])
+    return Q_hat
+
+def _scheduler_improvement(g :graphe, Sigma: List[float], h: float, eps: float, Q_hat: List[int]):
+    """
+    Paramètres:
+    - h : paramètre d'histoire, 0 < h < 1
+    - eps : Paramètre Glouton, 0 < eps < 1
+    """
+    Sigma2 = Sigma.copy()
+    for s in range(len(g.states)):
+        a_etoile = np.argmax([Q_hat[s]])
+        p = np.zeros((1,len(g.actions)))[0]
+        for a in range(len(g.actions)):
+            if a == a_etoile:
+                p[a] += (1-eps)
+            p[a] += eps*(Q_hat[s][a])/(np.sum(Q_hat[s]))
+        Sigma2[s] = h*Sigma[s] + (1-h)*p
+    return Sigma2
+
+def _scheduler_optimisation(g: graphe, Sigma: List[float], h: float, eps: float, N: int, L: int, phi):
+    for _ in range(L):
+        Q_hat = _scheduler_evaluate(g, Sigma, N, phi)
+        Sigma = _scheduler_improvement(g, Sigma, h, eps, Q_hat)
+    return Sigma
+
+def _scheduler_determinise(Sigma : List[float]):
+    return [[1 if i == np.argmax(x) else 0 for i in range(len(x))] for x in Sigma]
+
+def smc_mdp(g: graphe, h: float, eps: float, N: int, L: int, p: float, tau: float, phi, theta: float):
+    """
+    Paramètres: 
+    - tau : Confiance 
+    - p : Paramètre de convergence (0 < p < 1)
+    - phi : Hypothèse à vérifier
+    - theta : Confiance en l'hypothèse
+    """
+    T_tau_p = round(np.log2(tau)/np.log2(1-p))
+    for _ in range(T_tau_p):
+        Sigma = np.full((len(g.states), len(g.actions)), 1/(len(g.actions)))
+        Sigma = _scheduler_optimisation(g, Sigma, h, eps, N, L, phi)
+        Sigma = _scheduler_determinise(Sigma)
+        mat_projected = projection_mdp_to_mc(g.mat, np.argmax(Sigma, axis=1))
+        old_mat = g.mat
+        g.mat = np.array([mat_projected]*len(g.actions))
+        if not sprt_SMC(g, phi, theta = theta):
+            g.mat = old_mat
+            return False
+        g.mat = old_mat
+    return True
