@@ -428,7 +428,7 @@ def _scheduler_evaluate(g: graphe, Sigma: List[float], N: int, phi, k: int=50):
         for _ in range(k):
             s = np.random.choice(len(g.states), p=mat_projected[s, :])
             a = argmax_Sigma[s]
-            if phi(s): # if s satisfies phi
+            if phi(g.states[s]): # if s satisfies phi
                 R_plus[s][a] += 1
             else:
                 R_moins[s][a] += 1
