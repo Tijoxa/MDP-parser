@@ -412,7 +412,7 @@ def qlearning_rl(g: graphe, T_tot=1000, gamma=0.5):
 
 def _scheduler_evaluate(g: graphe, Sigma: List[float], N: int, phi, k: int=50):
     """
-    Paramètres:
+    Hyper-paramètres:
     - N : Nombre maximum d'échantillons
     - k : Profondeur de parcours
     - phi : Propriété à vérifier
@@ -428,7 +428,7 @@ def _scheduler_evaluate(g: graphe, Sigma: List[float], N: int, phi, k: int=50):
         for _ in range(k):
             s = np.random.choice(len(g.states), p=mat_projected[s, :])
             a = argmax_Sigma[s]
-            if phi(s): # if s satisfies phi
+            if phi(g.states[s]): # if s satisfies phi
                 R_plus[s][a] += 1
             else:
                 R_moins[s][a] += 1
@@ -440,7 +440,7 @@ def _scheduler_evaluate(g: graphe, Sigma: List[float], N: int, phi, k: int=50):
 
 def _scheduler_improvement(g :graphe, Sigma: List[float], h: float, eps: float, Q_hat: List[int]):
     """
-    Paramètres:
+    Hyper-paramètres:
     - h : paramètre d'histoire, 0 < h < 1
     - eps : Paramètre Glouton, 0 < eps < 1
     """
@@ -456,6 +456,10 @@ def _scheduler_improvement(g :graphe, Sigma: List[float], h: float, eps: float, 
     return Sigma2
 
 def _scheduler_optimisation(g: graphe, Sigma: List[float], h: float, eps: float, N: int, L: int, phi):
+    """
+    Hyper-paramètres:
+    - L : Nombre d'optimisations
+    """
     for _ in range(L):
         Q_hat = _scheduler_evaluate(g, Sigma, N, phi)
         Sigma = _scheduler_improvement(g, Sigma, h, eps, Q_hat)
@@ -467,8 +471,12 @@ def _scheduler_determinise(Sigma : List[float]):
 def smc_mdp(g: graphe, h: float, eps: float, N: int, L: int, p: float, tau: float, phi, theta: float):
     """
     Paramètres: 
-    - tau : Confiance 
+    - h : paramètre d'histoire, 0 < h < 1
+    - eps : Paramètre Glouton, 0 < eps < 1
+    - N : Nombre maximum d'échantillons
+    - L : Nombre d'optimisations
     - p : Paramètre de convergence (0 < p < 1)
+    - tau : Confiance 
     - phi : Hypothèse à vérifier
     - theta : Confiance en l'hypothèse
     """
