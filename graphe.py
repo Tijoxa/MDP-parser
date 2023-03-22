@@ -127,6 +127,17 @@ class graphe(gramPrintListener):
         [unique_erreur.append(x) for x in erreurs if x not in unique_erreur]
         return "\n".join(unique_erreur)
 
+    def boucleMDP(self):
+        """
+        Ajoute des boucles aux graphes pour toutes les actions qui n'ont pas de transitions. Réservé aux MDP.
+        """
+        for action in range(len(self.actions)):
+            for state in range(len(self.states)):
+                if not np.any(self.mat[action][state]):
+                    self.transact.append([self.states[state], self.actions[action], [self.states[state]], [1]])
+        self.mat = self.grapheToMat()
+        pass
+
     def visualizeGraphe(self):
         viz = graphviz.Digraph("Graphe", comment="vive Markov")
         if self.reward == []:
