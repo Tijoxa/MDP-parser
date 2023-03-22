@@ -54,11 +54,13 @@ def test_mean_reward_mdp():
 
 
 def test_iter_valeurs():
-    assert True
+    df = model_checking.iter_valeurs(graph_rw, gamma = 0.5)
+    assert (df["S0"]["Action"], df["S1"]["Action"], df["S2"]["Action"]) == ('a', 'a', 'c')
 
 
 def test_iter_politique():
-    assert True
+    df = model_checking.iter_politique(graph_rw, gamma = 0.5)
+    assert (df["S0"]["Action"], df["S1"]["Action"], df["S2"]["Action"]) == ('a', 'a', 'c')
 
 
 def test_montecarlo_rl():
