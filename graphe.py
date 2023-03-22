@@ -101,18 +101,18 @@ class graphe(gramPrintListener):
         # Vérification des états terminaux
         for state in self.states:
             if state not in check_terminal :
-                erreurs.append(f"Noeud terminal {state} sans aucune transition")
+                erreurs.append(f"Noeud terminal {state} sans aucune transition : ajout d'une boucle pour l'état")
                 self.transnoact.append([state,[state],[1]])
         # Vérification de transact
         for state in sum(check_states, []):
             if not (state in self.states):
-                erreurs.append(f"{state} état non défini")
+                erreurs.append(f"{state} état non défini : état ajouté dans self.states")
                 self.states.append(state)
                 self.dictStates[state] = self.dictStates[self.states[-2]] + 1
         # Vérification de transnoact
         for action in check_actions:
             if not (action in self.actions):
-                erreurs.append(f"{action} action non défini")
+                erreurs.append(f"{action} action non défini : action ajoutée dans self.actions")
                 self.actions.append(action)
                 self.dictActions[action] = self.dictActions[self.actions[-2]] + 1
         # Vérification de l'unicité des transactions avec/sans action
@@ -122,7 +122,7 @@ class graphe(gramPrintListener):
                     for state1 in transact[2]:
                         for state2 in transnoact[1]:
                             if state1 == state2:
-                                erreurs.append(f"La transition de {transact[0]} vers {state1} existe avec ET sans action.")
+                                erreurs.append(f"La transition de {transact[0]} vers {state1} existe avec ET sans action : la chaîne est acceptée, mais veuillez changer la structure")
         unique_erreur = []
         [unique_erreur.append(x) for x in erreurs if x not in unique_erreur]
         return "\n".join(unique_erreur)
