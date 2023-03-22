@@ -299,43 +299,44 @@ def iter_politique(g: graphe, gamma: float):
     df = pd.DataFrame([V,[g.actions[a] for a in Sigma_1]], columns = g.states, index = ["Valeur","Action"])
     return df
 
-def montecarlo_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: int=10, N: int=50):
+def montecarlo_rl(g: graphe, Sigma: List[int], alpha=(lambda k: 0.8/k), gamma: float=0.9, k: int=10, N: int=50):
     mat_projected = projection_mdp_to_mc(g.mat, Sigma)
     V_glob = []
     for _ in range(k): # nombre de simulations
-        V = [0 for _ in range(len(g.states))]
+        V = [g.reward[i] for i in range(len(g.states))]
         visited = [False for _ in range(len(g.states))]
         s = np.random.randint(len(g.states))
         rw = [g.reward[s]]
         visited[s] = True
-        V[s] = (1 - alpha) * V[s] + alpha * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
+        V[s] = (1 - alpha(k)) * V[s] + alpha(k) * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
         for _ in range(N):
             s = np.random.choice(len(g.states), p=mat_projected[s, :])
             if visited[s] == False:
                 rw.append(g.reward[s])
                 visited[s] = True
-                V[s] = (1 - alpha) * V[s] + alpha * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
+                V[s] = (1 - alpha(k)) * V[s] + alpha(k) * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
         V_glob.append(V)
     V_mean = np.mean(V_glob, axis=0)
     df = pd.DataFrame(V_mean, columns = ["V_mean"], index=g.states).transpose()
     return df
 
-def td_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: int=10, N: int=50):
+
+def td_rl(g: graphe, Sigma: List[int], alpha=(lambda k: 0.8/k), gamma: float=0.9, k: int=10, N: int=50):
     mat_projected = projection_mdp_to_mc(g.mat, Sigma)
     V_glob = []
     for _ in range(k):
-        V = [0 for _ in range(len(g.states))]
+        V = [g.reward[i] for i in range(len(g.states))]
         s = np.random.randint(len(g.states))
         next_s = np.random.choice(len(g.states), p=mat_projected[s, :])
         rw = g.reward[s]
         difference_temporelle = rw + gamma * V[next_s] - V[s]
-        V[s] += alpha * difference_temporelle
+        V[s] += alpha(k) * difference_temporelle
         for _ in range(N):
             s = next_s
             next_s = np.random.choice(len(g.states), p=mat_projected[s, :])
             rw = g.reward[s]
             difference_temporelle = rw + gamma * V[next_s] - V[s]
-            V[s] += alpha * difference_temporelle
+            V[s] += alpha(k) * difference_temporelle
         V_glob.append(V)
     V_mean = np.mean(V_glob, axis=0)
     df = pd.DataFrame(V_mean, columns = ["V_mean"], index=g.states).transpose()
