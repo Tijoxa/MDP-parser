@@ -136,6 +136,12 @@ class graphe(gramPrintListener):
                 if not np.any(self.mat[action][state]):
                     self.transact.append([self.states[state], self.actions[action], [self.states[state]], [1]])
         self.mat = self.grapheToMat()
+        self.actions_possibles = {}
+        for int_state, state in enumerate(self.states):
+            self.actions_possibles[state] = [i for i in range(len(self.actions)) if np.any(self.mat[i, int_state])]  # Les actions
+            for int_action in range(len(self.actions)):
+                if np.any(self.mat[int_action, int_state, :]):
+                    self.mat[int_action, int_state] /= np.sum(self.mat[int_action, int_state])
         pass
 
     def visualizeGraphe(self):
