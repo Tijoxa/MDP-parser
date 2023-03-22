@@ -24,7 +24,10 @@ class graphe(gramPrintListener):
         self.dictActions = {}
         for i, action in enumerate(self.actions):
             self.dictActions[action] = i
-        print(self._verifGraphe())
+        erreur = self._verifGraphe()
+        if erreur != "":
+            print(f"Erreur de vérification de {path} :")
+            print(f"{erreur}\n")
         self.mat = self.grapheToMat()
         self.actions_possibles = {}
         for int_state, state in enumerate(self.states):
