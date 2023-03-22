@@ -178,6 +178,12 @@ def statistiques(g : graphe, N_pas=50, N_parcours=50):
     print(freq)
 
 def montecarlo_SMC(g : graphe, eps=0.01, delta=0.05, max_depth = 5):
+    """
+    Calcule la probabilité d'arriver dans un état à partir de l'état de départ, en un parcours max_depth.
+    Paramètres: 
+    - eps, delta : Paramètres de calcul du nombre d'itérations à effectuer
+    - max_depth : profondeur de chaque simulation
+    """
     N = int((np.log(2) - np.log(delta))/(2*eps)**2)
     freq = np.zeros(len(g.states))
     for state in g.states:
@@ -185,7 +191,8 @@ def montecarlo_SMC(g : graphe, eps=0.01, delta=0.05, max_depth = 5):
             s = g._parcoursRapideAlea(N_pas=max_depth)
             if s == g.dictStates[state]:
                 freq[s] += 1
-    return freq/N 
+    freq = pd.DataFrame(freq/N, columns = ["P"], index=g.states).transpose()
+    return freq
 
 def sprt_SMC(g : graphe, propriété,alpha=0.01, beta=0.01, theta=0.5, eps=0.01, max_depth=5):
     gamma1 = theta - eps
@@ -247,7 +254,8 @@ def iter_valeurs(g: graphe, gamma: float, eps: float = 0.1):
         V0 = V1.copy()
         bellman(g, gamma, V0, V1, Sigma)
     
-    return V1, Sigma
+    df = pd.DataFrame([V1,[g.actions[a] for a in Sigma]], columns = g.states, index = ["Valeur","Action"])
+    return df
 
 def projection_mdp_to_mc(matrix: np.ndarray, scheduler):
     result = np.zeros(matrix.shape[1:3])
@@ -288,7 +296,8 @@ def iter_politique(g: graphe, gamma: float):
         Sigma_0 = Sigma_1.copy()
         Sigma_1, V = auxiliaire(g, Sigma_0, gamma)
 
-    return V, Sigma_1
+    df = pd.DataFrame([V,[g.actions[a] for a in Sigma_1]], columns = g.states, index = ["Valeur","Action"])
+    return df
 
 def montecarlo_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: int=10, N: int=50):
     mat_projected = projection_mdp_to_mc(g.mat, Sigma)
@@ -308,7 +317,8 @@ def montecarlo_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.
                 V[s] = (1 - alpha) * V[s] + alpha * np.polynomial.polynomial.polyval(gamma, np.flip(np.array(rw)))
         V_glob.append(V)
     V_mean = np.mean(V_glob, axis=0)
-    return V_mean
+    df = pd.DataFrame(V_mean, columns = ["V_mean"], index=g.states).transpose()
+    return df
 
 def td_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: int=10, N: int=50):
     mat_projected = projection_mdp_to_mc(g.mat, Sigma)
@@ -328,7 +338,8 @@ def td_rl(g: graphe, Sigma: List[int], alpha: float=0.8, gamma: float=0.9, k: in
             V[s] += alpha * difference_temporelle
         V_glob.append(V)
     V_mean = np.mean(V_glob, axis=0)
-    return V_mean
+    df = pd.DataFrame(V_mean, columns = ["V_mean"], index=g.states).transpose()
+    return df
 
 def sarsa_rl(g: graphe, T_tot=1000, gamma=0.5):
     mat = g.grapheToMat()
@@ -373,9 +384,11 @@ def sarsa_rl(g: graphe, T_tot=1000, gamma=0.5):
         s1=s2
         a=a1
 
-    print(q1)
+    dfq = pd.DataFrame(q1, columns = g.actions, index=g.states)
+    print(dfq)
     policy = np.argmax(q1, axis=1)
-    return policy
+    df = pd.DataFrame([g.actions[a] for a in policy], columns = ["Action"], index=g.states).transpose()
+    return df
 
 def qlearning_rl(g: graphe, T_tot=1000, gamma=0.5):
     mat = g.grapheToMat()
@@ -406,9 +419,11 @@ def qlearning_rl(g: graphe, T_tot=1000, gamma=0.5):
         q0=q1
         s=s1
 
-    print(q1)
+    dfq = pd.DataFrame(q1, columns = g.actions, index=g.states)
+    print(dfq)
     policy = np.argmax(q1, axis=1)
-    return policy
+    df = pd.DataFrame([g.actions[a] for a in policy], columns = ["Action"], index=g.states).transpose()
+    return df
 
 def _scheduler_evaluate(g: graphe, Sigma: List[float], N: int, phi, k: int=50):
     """
